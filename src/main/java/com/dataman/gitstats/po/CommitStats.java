@@ -18,6 +18,7 @@ public class CommitStats extends Commit{
 	String _id; //从 gitlab 中读出来
 	int addRow; //添加行数
 	int removeRow; //删除行数
+	String projectName;
 
 	public String get_id() {
 		return super.getId();
@@ -41,6 +42,14 @@ public class CommitStats extends Commit{
 
 	public void setRemoveRow(int removeRow) {
 		this.removeRow = removeRow;
+	}
+
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
 	}
 	
 }
