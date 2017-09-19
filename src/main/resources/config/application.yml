@@ -1,0 +1,42 @@
+# ===================================================================
+# Spring Boot configuration.
+# ===================================================================
+
+# ===================================================================
+# Full reference is available at:
+# http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+# ===================================================================
+
+  
+# http server autoconfig
+#
+server:
+  port: 8081
+  error:
+    path: /static/err.html
+
+logging:
+  config: classpath:config/logback.xml
+  level: INFO
+  path: ../logs
+
+swagger:
+  enabled: true
+  title: gitlab-code-statistics
+  description: gitlab-code-statistics接口规范
+  version: 1.0
+
+gitlab:
+  url: http://192.168.199.32:8004
+  user: root
+  pwd: 12345678  
+ 
+# mongodb 配置
+spring:
+  data:
+    mongodb:
+        uri: mongodb://192.168.199.32:27027/gitstats
+  
+    
+  
+  

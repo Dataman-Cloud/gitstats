@@ -25,6 +25,7 @@ hs_err_pid*
 *.project
 *.classpath
 *.settings/
+/logs/
 
 # idea files
 *.idea

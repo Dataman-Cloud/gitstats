@@ -1,0 +1,73 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.dataman</groupId>
+	<artifactId>gitstats</artifactId>
+	<version>1.0</version>
+	<packaging>jar</packaging>
+
+	<name>gitstats</name>
+	<url>http://maven.apache.org</url>
+
+	<!-- Inherit defaults from Spring Boot -->
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.6.RELEASE</version>
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<springfox.swagger.version>2.6.1</springfox.swagger.version>
+		<java.version>1.8</java.version>
+		<start-class>com.dataman.gitstats.Application</start-class>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+		<springfox.swagger.version>2.6.1</springfox.swagger.version>
+		<fastjson.version>1.2.7</fastjson.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- 增加mongodb支持 -->
+	    <dependency>
+	       <groupId>org.springframework.boot</groupId>
+	       <artifactId>spring-boot-starter-data-mongodb</artifactId>
+	    </dependency>
+		<!-- begin web rest api -->
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>${springfox.swagger.version}</version>
+		</dependency>
+		<!-- end web rest api -->
+
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.gitlab4j</groupId>
+		    <artifactId>gitlab4j-api</artifactId>
+		    <version>4.4.8</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>${fastjson.version}</version>
+		</dependency>
+		
+		
+		
+	</dependencies>
+</project>
