@@ -13,5 +13,13 @@ import com.dataman.gitstats.po.CommitStats;
  */
 @Component
 public interface CommitStatsRepository  extends MongoRepository<CommitStats,String>{
+	
+	/**
+	 * @method delByProjectName(根据项目名称删除)
+	 * @return Long
+	 * @author liuqing
+	 * @date 2017年9月19日 下午5:34:47
+	 */
+	public Long delByProjectName(String projectName);
 
 }
