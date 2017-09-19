@@ -20,6 +20,6 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStats,Stri
 	 * @author liuqing
 	 * @date 2017年9月19日 下午5:34:47
 	 */
-	public Long delByProjectName(String projectName);
+	public Long deleteByProjectName(String projectName);
 
 }
