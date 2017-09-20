@@ -6,7 +6,6 @@ import java.util.concurrent.Future;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.CommitStats;
-import org.gitlab4j.api.models.Diff;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

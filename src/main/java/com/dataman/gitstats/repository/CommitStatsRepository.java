@@ -1,5 +1,7 @@
 package com.dataman.gitstats.repository;
 
+import java.util.List;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Component;
 
@@ -21,5 +23,7 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,St
 	 * @date 2017年9月19日 下午5:34:47
 	 */
 	public Long deleteByProjectName(String projectName);
+	
+	
 
 }
