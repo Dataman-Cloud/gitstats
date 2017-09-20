@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.GitLabApiException;
-import org.gitlab4j.api.models.Comment;
 import org.gitlab4j.api.models.Commit;
+import org.gitlab4j.api.models.CommitStats;
 import org.gitlab4j.api.models.Diff;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
-import com.dataman.gitstats.po.CommitStats;
+import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectStats;
 import com.dataman.gitstats.repository.CommitStatsRepository;
 import com.dataman.gitstats.repository.ProjectRepository;
@@ -35,7 +34,6 @@ public class AsyncTask {
 	
 	@Autowired
 	CommitStatsRepository commitStatsRepository;
-	
 	
 	/**
 	 * @method initProjectStats(初始化数据)
@@ -57,18 +55,17 @@ public class AsyncTask {
 		//遍历统计add 和　remove
 		for (Commit commit : list) {
 			commits++;
-			int a=0,r=0;
-			CommitStats cs=ClassUitl.copyProperties(commit, new CommitStats());
+			CommitStatsPo cs=ClassUitl.copyProperties(commit, new CommitStatsPo());
+			// 是有 获取单个 的commit 的接口中才保存 添加行数 和 删除 行数的 数据
+			Commit sigleCommit=gitLabApi.getCommitsApi().getCommit(projectId, commit.getId());
+			CommitStats commitStats = sigleCommit.getStats();
 			cs.setProjectName(prostats.getName());
-			List<Diff> diffs= gitLabApi.getCommitsApi().getDiff(projectId, commit.getId());
-			
-			cs.setAddRow(a);
-			cs.setRemoveRow(r);
+			cs.setAddRow(commitStats.getAdditions());
+			cs.setRemoveRow(commitStats.getDeletions());
 			commitStatsRepository.insert(cs);
+			addRow+=commitStats.getAdditions();
+			removeRow+=commitStats.getDeletions();
 		}
-		
-		
-		
 		//修改初始化状态　和　修改统计数据
 		prostats.setTotalCommit(commits);
 		prostats.setTotalRemove(removeRow);
