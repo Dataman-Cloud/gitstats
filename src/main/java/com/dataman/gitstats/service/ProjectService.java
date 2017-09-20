@@ -31,10 +31,10 @@ public class ProjectService {
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
 	 * @author liuqing
-	 * @throws GitLabApiException 
+	 * @throws Exception 
 	 * @date 2017年9月19日 下午3:12:39
 	 */
-	public int addProject(AddProjectParam param) throws GitLabApiException{
+	public int addProject(AddProjectParam param) throws Exception{
 		int SUCCESS=0,NOTEXISTPROJECT=1,NOTEXISTBRANCH=2,SAMEPROJECTNAME=3;
 		Calendar cal=Calendar.getInstance();
 		//判断项目名称 和 版本 是不是 在gitlib中存在
