@@ -5,9 +5,11 @@ import javax.validation.constraints.NotNull;
 public class AddProjectParam {
 
 	@NotNull
+	String aId;
+	@NotNull
 	String name;
 	@NotNull
-	String branch;
+	String[] branchs;
 	
 	public String getName() {
 		return name;
@@ -15,12 +17,19 @@ public class AddProjectParam {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getBranch() {
-		return branch;
+	public String getaId() {
+		return aId;
 	}
-	public void setBranch(String branch) {
-		this.branch = branch;
+	public void setaId(String aId) {
+		this.aId = aId;
 	}
+	public String[] getBranchs() {
+		return branchs;
+	}
+	public void setBranchs(String[] branchs) {
+		this.branchs = branchs;
+	}
+	
 	
 	
 }

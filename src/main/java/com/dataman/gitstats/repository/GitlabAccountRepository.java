@@ -8,4 +8,7 @@ import com.dataman.gitstats.po.GitlabAccount;
 @Component
 public interface GitlabAccountRepository extends MongoRepository<GitlabAccount, String>{
 
+	public GitlabAccount findByTypeAndUrlAndUserAndToken(int type,String url,String user,String token);
+
+	
 }

@@ -1,10 +1,16 @@
 package com.dataman.gitstats.param;
 
+import javax.validation.constraints.NotNull;
+
 public class AddAccountParam {
 
+	@NotNull
 	String url;
 	String user;
 	String pwd;
+	@NotNull
+	int type;  //类型 1 pwd 验证 token 验证
+	String token;
 	
 	public String getUrl() {
 		return url;
@@ -24,6 +30,17 @@ public class AddAccountParam {
 	public void setPwd(String pwd) {
 		this.pwd = pwd;
 	}
-	
+	public int getType() {
+		return type;
+	}
+	public void setType(int type) {
+		this.type = type;
+	}
+	public String getToken() {
+		return token;
+	}
+	public void setToken(String token) {
+		this.token = token;
+	}
 	
 }
