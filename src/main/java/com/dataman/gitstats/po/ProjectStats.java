@@ -22,7 +22,7 @@ public class ProjectStats {
 	Date lastupdate;
 	Date createdate;
 	String accountId; //帐号id
-	
+	int webhookstatus; // 0 未配置　１已配置
 	
 	public String getId() {
 		return id;
@@ -59,6 +59,12 @@ public class ProjectStats {
 	}
 	public void setCreatedate(Date createdate) {
 		this.createdate = createdate;
+	}
+	public int getWebhookstatus() {
+		return webhookstatus;
+	}
+	public void setWebhookstatus(int webhookstatus) {
+		this.webhookstatus = webhookstatus;
 	}
 	
 	
