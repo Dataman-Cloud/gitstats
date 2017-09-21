@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
@@ -31,10 +30,10 @@ public class ProjectService {
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
 	 * @author liuqing
-	 * @throws GitLabApiException 
+	 * @throws Exception 
 	 * @date 2017年9月19日 下午3:12:39
 	 */
-	public int addProject(AddProjectParam param) throws GitLabApiException{
+	public int addProject(AddProjectParam param) throws Exception{
 		int SUCCESS=0,NOTEXISTPROJECT=1,NOTEXISTBRANCH=2,SAMEPROJECTNAME=3;
 		Calendar cal=Calendar.getInstance();
 		//判断项目名称 和 版本 是不是 在gitlib中存在
@@ -63,15 +62,8 @@ public class ProjectService {
 		ProjectStats prostats = new ProjectStats();
 		prostats.setId(UUID.randomUUID().toString().replaceAll("-", ""));
 		prostats.setName(param.getName());
-		prostats.setSha(param.getBranch());
 		prostats.setProId(project.getId());
-		prostats.setWebhookstatus(webhookststus);
-		prostats.setStatus(0);
 		prostats.setLastupdate(cal.getTime());
-		prostats.setTotalCommit(0);
-		prostats.setTotalRemove(0);
-		prostats.setTotalAdd(0);
-		prostats.setTotalRow(0);
 		projectRepository.insert(prostats);
 		//异步执行 初始化方法
 		asyncTask.initProjectStats(prostats);

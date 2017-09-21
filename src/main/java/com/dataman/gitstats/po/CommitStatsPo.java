@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * @Copyright © 2017北京数人科技有限公司
  */
 @Document
-public class CommitStats extends Commit{
+public class CommitStatsPo extends Commit{
 	
 	@Id
 	String _id; //从 gitlab 中读出来

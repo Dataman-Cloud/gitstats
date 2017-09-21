@@ -19,14 +19,10 @@ public class ProjectStats {
 	String id;
 	int proId; // gitlab project Id
 	String name; 
-	String sha; // branch 
 	Date lastupdate;
-	int totalRow; //总行数
-	int totalCommit; //总提交次数
-	int totalRemove; //总删除
-	int totalAdd; //总添加
-	int status; // 0  未初始化  1 初始化
-	int webhookstatus; // 0 未配置　１已配置
+	Date createdate;
+	String accountId; //帐号id
+	
 	
 	public String getId() {
 		return id;
@@ -46,53 +42,24 @@ public class ProjectStats {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getSha() {
-		return sha;
-	}
-	public void setSha(String sha) {
-		this.sha = sha;
-	}
 	public Date getLastupdate() {
 		return lastupdate;
 	}
 	public void setLastupdate(Date lastupdate) {
 		this.lastupdate = lastupdate;
 	}
-	public int getTotalRow() {
-		return totalRow;
+	public String getAccountId() {
+		return accountId;
 	}
-	public void setTotalRow(int totalRow) {
-		this.totalRow = totalRow;
+	public void setAccountId(String accountId) {
+		this.accountId = accountId;
 	}
-	public int getTotalCommit() {
-		return totalCommit;
+	public Date getCreatedate() {
+		return createdate;
 	}
-	public void setTotalCommit(int totalCommit) {
-		this.totalCommit = totalCommit;
+	public void setCreatedate(Date createdate) {
+		this.createdate = createdate;
 	}
-	public int getTotalRemove() {
-		return totalRemove;
-	}
-	public void setTotalRemove(int totalRemove) {
-		this.totalRemove = totalRemove;
-	}
-	public int getStatus() {
-		return status;
-	}
-	public void setStatus(int status) {
-		this.status = status;
-	}
-	public int getWebhookstatus() {
-		return webhookstatus;
-	}
-	public void setWebhookstatus(int webhookstatus) {
-		this.webhookstatus = webhookstatus;
-	}
-	public int getTotalAdd() {
-		return totalAdd;
-	}
-	public void setTotalAdd(int totalAdd) {
-		this.totalAdd = totalAdd;
-	}
+	
 	
 }
