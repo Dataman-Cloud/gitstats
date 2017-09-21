@@ -22,6 +22,7 @@ public class ProjectStats {
 	Date lastupdate;
 	Date createdate;
 	String accountId; //帐号id
+	String weburl;
 	int webhookstatus; // 0 未配置　１已配置
 	
 	public String getId() {
@@ -65,6 +66,12 @@ public class ProjectStats {
 	}
 	public void setWebhookstatus(int webhookstatus) {
 		this.webhookstatus = webhookstatus;
+	}
+	public String getWeburl() {
+		return weburl;
+	}
+	public void setWeburl(String weburl) {
+		this.weburl = weburl;
 	}
 	
 }
