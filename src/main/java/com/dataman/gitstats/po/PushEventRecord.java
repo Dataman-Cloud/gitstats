@@ -14,9 +14,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class PushEventRecord extends PushEvent{
 
+	public static String DEFAULT="DEFAULT";
+	public static String HANDLING="HANDLING";
+	public static String NEED_NOT_HANDLE="NEED_NOT_HANDLE";
+	public static String FINISHED="FINISHED";
+	public static String ERROR="ERROR";
 	@Id
 	String id_;
-	String status; // 0 未处理  1 已处理
+	String status=DEFAULT; // 0 未处理  1 已处理	2
 	String domsg; // 处理标记
 	
 	static String DOMSG_NOTINIT ="DOMSG_NOTINIT"; // 未初始化
