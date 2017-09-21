@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
@@ -63,15 +62,8 @@ public class ProjectService {
 		ProjectStats prostats = new ProjectStats();
 		prostats.setId(UUID.randomUUID().toString().replaceAll("-", ""));
 		prostats.setName(param.getName());
-		prostats.setSha(param.getBranch());
 		prostats.setProId(project.getId());
-		prostats.setWebhookstatus(webhookststus);
-		prostats.setStatus(0);
 		prostats.setLastupdate(cal.getTime());
-		prostats.setTotalCommit(0);
-		prostats.setTotalRemove(0);
-		prostats.setTotalAdd(0);
-		prostats.setTotalRow(0);
 		projectRepository.insert(prostats);
 		//异步执行 初始化方法
 		asyncTask.initProjectStats(prostats);
