@@ -24,9 +24,9 @@ public class GitlabAccount {
 	Date cratedate;
 	Date Lastupdate;
 	int stats; // 状态   0 未通过 1 正常
-	int type; //类型 1 pwd 验证 token 验证
+	int type; //类型 0 pwd 验证 1 token 验证
 	String token;
-	
+	String name;
 	
 	public String getId() {
 		return id;
@@ -87,6 +87,12 @@ public class GitlabAccount {
 	}
 	public void setToken(String token) {
 		this.token = token;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
 	}
 	
 }

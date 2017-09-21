@@ -67,5 +67,4 @@ public class ProjectStats {
 		this.webhookstatus = webhookstatus;
 	}
 	
-	
 }

@@ -25,7 +25,7 @@ public class AsyncTask {
 
 	protected Logger logger = LoggerFactory.getLogger(this.getClass());
 	
-	@Autowired
+	// @Autowired
 	GitLabApi gitLabApi;
 	
 	@Autowired
@@ -46,7 +46,7 @@ public class AsyncTask {
 		long begin = System.currentTimeMillis();
 		int addRow=0,removeRow=0,commits=0;
 		int projectId= prostats.getProId();
-		String sha= prostats.getSha();
+		
 		//清空数据
 		commitStatsRepository.deleteByProjectName(prostats.getName());
 		//获取当前版本所有的commit
@@ -66,10 +66,7 @@ public class AsyncTask {
 			removeRow+=commitStats.getDeletions();
 		}
 		//修改初始化状态　和　修改统计数据
-		prostats.setTotalCommit(commits);
-		prostats.setTotalRemove(removeRow);
-		prostats.setTotalAdd(addRow);
-		prostats.setTotalRow(addRow-removeRow);
+		
 		
 		long end = System.currentTimeMillis();
 		return new AsyncResult<String>("初始化完成");  

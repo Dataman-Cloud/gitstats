@@ -2,27 +2,28 @@ package com.dataman.gitstats.service;
 
 import java.util.Calendar;
 import java.util.List;
-import java.util.UUID;
 
 import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Project;
-import org.gitlab4j.api.models.ProjectHook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.po.ProjectStats;
+import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
 import com.dataman.gitstats.repository.ProjectRepository;
 
 @Service
 public class ProjectService {
 
-	@Autowired
+	// @Autowired
 	GitLabApi gitLabApi;
 	
 	@Autowired
 	ProjectRepository projectRepository;
+	
+	@Autowired
+	ProjectBranchStatsRepository projectBranchStatsRepository;
 	
 	@Autowired
 	AsyncTask asyncTask;
@@ -45,31 +46,22 @@ public class ProjectService {
 			return SAMEPROJECTNAME; //存在多个相同的查询名称
 		}
 		Project project= list.get(0);
-		//获取所有的分支 判断是否需要统计的分支是否存在
-		List<Branch> branchs= gitLabApi.getRepositoryApi().getBranches(project.getId());
-		if (branchs.isEmpty() || branchs.stream().filter(b -> b.getName().equals(param.getBranch()))
-				.findFirst().isPresent()){
-			return NOTEXISTBRANCH; //不存需要的版本
-		}
-		//判断 webhook 是否注册好
-		int webhookststus=1;
-		List<ProjectHook> hooks = gitLabApi.getProjectApi().getHooks(project.getId());
-		if(hooks.stream().filter(h -> h.getUrl().indexOf("/webHook/receive")>0)
-				.findFirst().isPresent()){
-			webhookststus=0;
-		}
-		//添加记录到mongodb
-		ProjectStats prostats = new ProjectStats();
-		prostats.setId(UUID.randomUUID().toString().replaceAll("-", ""));
-		prostats.setName(param.getName());
-		prostats.setProId(project.getId());
-		prostats.setLastupdate(cal.getTime());
-		projectRepository.insert(prostats);
-		//异步执行 初始化方法
-		asyncTask.initProjectStats(prostats);
+		// 验证 分支是
+		
+		
+		
+		
 		return SUCCESS;
 	}
 	
+	public List<ProjectStats> getAll(){
+		return projectRepository.findAll();
+	}
 	
+	public int delProject(String id){
+		int SUCCESS=0;
+		projectRepository.delete(id);
+		return SUCCESS;
+	}
 	
 }
