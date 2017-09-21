@@ -1,23 +1,26 @@
 package com.dataman.gitstats.service;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 import org.gitlab4j.api.GitLabApi;
+import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Project;
+import org.gitlab4j.api.models.ProjectHook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.dataman.gitstats.param.AddProjectParam;
+import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.po.ProjectStats;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
 import com.dataman.gitstats.repository.ProjectRepository;
+import com.dataman.gitstats.util.Commnt;
+import com.dataman.gitstats.util.GitlabUtil;
 
 @Service
 public class ProjectService {
-
-	// @Autowired
-	GitLabApi gitLabApi;
 	
 	@Autowired
 	ProjectRepository projectRepository;
@@ -27,6 +30,9 @@ public class ProjectService {
 	
 	@Autowired
 	AsyncTask asyncTask;
+	
+	@Autowired
+	GitlabUtil gitlabUtil;
 	/**
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
@@ -35,23 +41,50 @@ public class ProjectService {
 	 * @date 2017年9月19日 下午3:12:39
 	 */
 	public int addProject(AddProjectParam param) throws Exception{
-		int SUCCESS=0,NOTEXISTPROJECT=1,NOTEXISTBRANCH=2,SAMEPROJECTNAME=3;
+		int SUCCESS=0,EXISTED=1,NOTEXIST=2;
 		Calendar cal=Calendar.getInstance();
-		//判断项目名称 和 版本 是不是 在gitlib中存在
-		List<Project> list= gitLabApi.getProjectApi().getProjects(param.getName());
-		if(list.isEmpty()){
-			return NOTEXISTPROJECT; //不存在该项目名称
+		//验证是否 存在于 mongodb
+		ProjectStats ps = projectRepository.findByNameAndAccountId(param.getName(), param.getAid());
+		if(ps != null){
+			return EXISTED;
 		}
-		if(list.size()>1){
-			return SAMEPROJECTNAME; //存在多个相同的查询名称
+		//验证是否 存在于 gitlab
+		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(param.getAid());
+		List<Project> projects= gitLabApi.getProjectApi().getProjects(param.getName());
+		if(projects.isEmpty()){
+			return NOTEXIST;
 		}
-		Project project= list.get(0);
-		// 验证 分支是
+		Project project= projects.get(0);
+		//存库
+		ps =new ProjectStats();
+		ps.setId(Commnt.createUUID());
+		ps.setAccountId(param.getAid());
+		ps.setName(param.getName());
+		ps.setProId(project.getId());
+		ps.setCreatedate(cal.getTime());
+		ps.setLastupdate(cal.getTime());
+		ps.setWeburl(project.getWebUrl());
+		boolean check=checkWebhookStats(param.getAid(),project.getId());
+		ps.setWebhookstatus(check?1:0);
 		
-		
+		List<ProjectBranchStats> branchs=new ArrayList<ProjectBranchStats>(); 
+		for (String branch : param.getBranchs()) {
+			
+		}
 		
 		
 		return SUCCESS;
+	}
+	
+	
+	boolean checkWebhookStats(String aid,int pid) throws GitLabApiException{
+		boolean flag=false;
+		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(aid);
+		List<ProjectHook> hooks= gitLabApi.getProjectApi().getHooks(pid);
+		if(!hooks.isEmpty()){
+			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf("/webHook/receive")>0).findFirst().isPresent();	
+		}
+		return flag;
 	}
 	
 	public List<ProjectStats> getAll(){
