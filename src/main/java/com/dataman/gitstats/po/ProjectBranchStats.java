@@ -22,7 +22,6 @@ public class ProjectBranchStats {
 	String branch;
 	String projectname;
 	int status; // 0  未初始化  1 初始化
-	int webhookstatus; // 0 未配置　１已配置
 	
 	int totalRow;
 	int totalAddRow;
@@ -66,12 +65,6 @@ public class ProjectBranchStats {
 	}
 	public void setStatus(int status) {
 		this.status = status;
-	}
-	public int getWebhookstatus() {
-		return webhookstatus;
-	}
-	public void setWebhookstatus(int webhookstatus) {
-		this.webhookstatus = webhookstatus;
 	}
 	public int getTotalRow() {
 		return totalRow;
