@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.po.ProjectStats;
+import com.dataman.gitstats.repository.CommitStatsRepository;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
 import com.dataman.gitstats.repository.ProjectRepository;
 import com.dataman.gitstats.util.Commnt;
@@ -27,6 +28,8 @@ public class ProjectService {
 	
 	@Autowired
 	ProjectBranchStatsRepository projectBranchStatsRepository;
+	@Autowired
+	CommitStatsRepository commitStatsRepository;
 	
 	@Autowired
 	AsyncTask asyncTask;
@@ -64,15 +67,32 @@ public class ProjectService {
 		ps.setCreatedate(cal.getTime());
 		ps.setLastupdate(cal.getTime());
 		ps.setWeburl(project.getWebUrl());
+		ps.setDsc(project.getDescription());
 		boolean check=checkWebhookStats(param.getAid(),project.getId());
 		ps.setWebhookstatus(check?1:0);
+		projectRepository.insert(ps);
 		
 		List<ProjectBranchStats> branchs=new ArrayList<ProjectBranchStats>(); 
 		for (String branch : param.getBranchs()) {
-			
+			ProjectBranchStats pbs= new ProjectBranchStats();
+			pbs.setId(Commnt.createUUID());
+			pbs.setAccountid(param.getAid());
+			pbs.setProjectid(ps.getId());
+			pbs.setBranch(branch);
+			pbs.setProjectname(ps.getName());
+			pbs.setStatus(0);
+			pbs.setTotalAddRow(0);
+			pbs.setTotalDelRow(0);
+			pbs.setTotalRow(0);
+			pbs.setCreatedate(cal.getTime());
+			pbs.setLastupdate(cal.getTime());
+			pbs.setProid(ps.getProId());
+			branchs.add(pbs);
 		}
-		
-		
+		projectBranchStatsRepository.insert(branchs);
+		for (ProjectBranchStats projectBranchStats : branchs) {
+			asyncTask.initProjectStats(projectBranchStats);
+		}
 		return SUCCESS;
 	}
 	
@@ -94,6 +114,8 @@ public class ProjectService {
 	public int delProject(String id){
 		int SUCCESS=0;
 		projectRepository.delete(id);
+		projectBranchStatsRepository.deleteByProjectid(id);
+		commitStatsRepository.deleteByProid(id);
 		return SUCCESS;
 	}
 	

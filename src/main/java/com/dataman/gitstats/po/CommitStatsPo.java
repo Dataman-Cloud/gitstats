@@ -1,5 +1,7 @@
 package com.dataman.gitstats.po;
 
+import java.util.Date;
+
 import org.gitlab4j.api.models.Commit;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -19,6 +21,9 @@ public class CommitStatsPo extends Commit{
 	int addRow; //添加行数
 	int removeRow; //删除行数
 	String projectName;
+	String proid;
+	String branch;
+	Date crateDate;
 
 	public String get_id() {
 		return super.getId();
@@ -50,6 +55,30 @@ public class CommitStatsPo extends Commit{
 
 	public void setProjectName(String projectName) {
 		this.projectName = projectName;
+	}
+
+	public String getProid() {
+		return proid;
+	}
+
+	public void setProid(String proid) {
+		this.proid = proid;
+	}
+
+	public String getBranch() {
+		return branch;
+	}
+
+	public void setBranch(String branch) {
+		this.branch = branch;
+	}
+
+	public Date getCrateDate() {
+		return crateDate;
+	}
+
+	public void setCrateDate(Date crateDate) {
+		this.crateDate = crateDate;
 	}
 	
 }

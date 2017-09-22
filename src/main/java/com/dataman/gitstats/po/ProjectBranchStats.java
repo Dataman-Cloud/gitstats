@@ -21,6 +21,7 @@ public class ProjectBranchStats {
 	String accountid;
 	String branch;
 	String projectname;
+	int proid;
 	int status; // 0  未初始化  1 初始化
 	
 	int totalRow;
@@ -95,5 +96,11 @@ public class ProjectBranchStats {
 	}
 	public void setCreatedate(Date createdate) {
 		this.createdate = createdate;
+	}
+	public int getProid() {
+		return proid;
+	}
+	public void setProid(int proid) {
+		this.proid = proid;
 	}
 }

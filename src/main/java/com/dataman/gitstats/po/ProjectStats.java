@@ -24,6 +24,7 @@ public class ProjectStats {
 	String accountId; //帐号id
 	String weburl;
 	int webhookstatus; // 0 未配置　１已配置
+	String dsc;
 	
 	public String getId() {
 		return id;
@@ -72,6 +73,12 @@ public class ProjectStats {
 	}
 	public void setWeburl(String weburl) {
 		this.weburl = weburl;
+	}
+	public String getDsc() {
+		return dsc;
+	}
+	public void setDsc(String dsc) {
+		this.dsc = dsc;
 	}
 	
 }
