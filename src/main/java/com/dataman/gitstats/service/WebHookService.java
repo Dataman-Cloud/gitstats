@@ -48,8 +48,7 @@ public class WebHookService {
             ProjectBranchStats branchStats=projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getBranch());
             if(branchStats!=null){
                 record.setStatus(record.HANDLING);
-                asyncTask.saveCommitStatsFromEventCommitsList(record.getCommits());
-
+                asyncTask.saveCommitStatsFromEventCommitsList(record,branchStats,record.getCommits());
             }else{
                 record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);
             }

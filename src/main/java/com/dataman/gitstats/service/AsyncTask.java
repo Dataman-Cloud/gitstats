@@ -1,10 +1,10 @@
 package com.dataman.gitstats.service;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Future;
 
+import com.dataman.gitstats.po.PushEventRecord;
+import com.dataman.gitstats.repository.PushEventRecordRepository;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Commit;
@@ -35,9 +35,12 @@ public class AsyncTask {
 	
 	@Autowired
 	ProjectBranchStatsRepository projectBranchStatsRepository;
-	
+
 	@Autowired
 	CommitStatsRepository commitStatsRepository;
+
+	@Autowired
+	PushEventRecordRepository pushEventRecordRepository;
 	
 	/**
 	 * @method initProjectStats(初始化数据)
@@ -72,7 +75,9 @@ public class AsyncTask {
 				// TODO Auto-generated catch block
 				logger.info(e.getMessage());
 			}
-			csp.setBranch(branch);
+			Set<String> commitBranch=new HashSet<>();
+			commitBranch.add(branch);
+			csp.setBranch(commitBranch);
 			csp.setProid(pid);
 			Commit sigleCommit= gitLabApi.getCommitsApi().getCommit(projectId, commit.getId());
 			CommitStats stats= sigleCommit.getStats();
@@ -100,12 +105,43 @@ public class AsyncTask {
 	}
 
 	@Async
-	public void saveCommitStatsFromEventCommitsList(List<EventCommit> eventCommitList) {
-
+	public void saveCommitStatsFromEventCommitsList(PushEventRecord record,ProjectBranchStats projectBranchStats,List<EventCommit> eventCommitList) throws Exception {
+		GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectBranchStats.getAccountid());
+			while (projectBranchStats.getStatus()==0){
+				Thread.sleep(1000);
+				projectBranchStats=projectBranchStatsRepository.findOne(projectBranchStats.getId());
+			}
+		projectBranchStats.setStatus(0);
+		projectBranchStatsRepository.save(projectBranchStats);
+		CommitStatsPo commitStats;
 		for(EventCommit eventCommit:eventCommitList){
+			commitStats=commitStatsRepository.findOne(eventCommit.getId());
+			if(commitStats==null){
+				Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
+				commitStats=new CommitStatsPo();
+				ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
+				commitStats.setProid(projectBranchStats.getProjectid());
+				Set<String> branch=new HashSet<>();
+				branch.add(projectBranchStats.getBranch());
+				commitStats.setBranch(branch);
+				commitStats.setAddRow(commit.getStats().getAdditions());
+				commitStats.setRemoveRow(commit.getStats().getDeletions());
+				commitStats.setCrateDate(new Date());
 
+				projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
+				projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
+				projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+				projectBranchStatsRepository.save(projectBranchStats);
+			}else{
+				commitStats.getBranch().add(projectBranchStats.getBranch());
+			}
+			commitStatsRepository.save(commitStats);
 		}
-
+		projectBranchStats.setStatus(1);
+		projectBranchStatsRepository.save(projectBranchStats);
+		record.setStatus(record.FINISHED);
+		record.setUpdateAt(new Date());
+		pushEventRecordRepository.save(record);
 	}
 	
 	
