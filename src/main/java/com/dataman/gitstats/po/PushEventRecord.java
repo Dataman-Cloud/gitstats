@@ -16,7 +16,8 @@ public class PushEventRecord extends PushEvent{
 
 	public static String DEFAULT="DEFAULT";
 	public static String HANDLING="HANDLING";
-	public static String NEED_NOT_HANDLE="NEED_NOT_HANDLE";
+	public static String NEED_NOT_HANDLE_NO_THIS_PROJECT="NEED_NOT_HANDLE_NO_THIS_PROJECT";
+	public static String NEED_NOT_HANDLE_NO_THIS_BRANCH="NEED_NOT_HANDLE_NO_THIS_BRANCH";
 	public static String FINISHED="FINISHED";
 	public static String ERROR="ERROR";
 	@Id

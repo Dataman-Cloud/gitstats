@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import com.dataman.gitstats.po.PushEventRecord;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
+import org.gitlab4j.api.webhook.PushEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -89,6 +91,16 @@ public class ProjectService {
 	
 	public List<ProjectStats> getAll(){
 		return projectRepository.findAll();
+	}
+
+	public ProjectStats findProjectStatsByPushEvent(PushEvent event){
+		Integer projectId=event.getProjectId();
+		String repository=event.getProject().getWebUrl();
+		return projectRepository.findByWeburlAndProId(repository,projectId);
+	}
+
+	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){
+		return projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
 	}
 	
 	public int delProject(String id){

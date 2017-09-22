@@ -6,6 +6,7 @@ import java.util.concurrent.Future;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.CommitStats;
+import org.gitlab4j.api.webhook.EventCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +71,15 @@ public class AsyncTask {
 		
 		long end = System.currentTimeMillis();
 		return new AsyncResult<String>("初始化完成");  
+	}
+
+	@Async
+	public void saveCommitStatsFromEventCommitsList(List<EventCommit> eventCommitList) {
+
+		for(EventCommit eventCommit:eventCommitList){
+
+		}
+
 	}
 	
 	
