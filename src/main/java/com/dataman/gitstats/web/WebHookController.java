@@ -23,7 +23,7 @@ public class WebHookController extends BaseController {
 
 	@RequestMapping(value="/receive",method=RequestMethod.POST)
 	@ApiOperation(value = "gitlab的webHook接收方法", notes = "gitlab的webHook接收方法")
-	public Object receiveWebHook(PushEvent  event){
+	public Object receiveWebHook(PushEvent  event) throws Exception {
 		hookService.add(event);
 		json.clear();
 		return json;
