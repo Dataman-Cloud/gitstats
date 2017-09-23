@@ -7,6 +7,8 @@ import org.gitlab4j.api.models.Commit;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.dataman.gitstats.util.Commnt;
+
 /**
  * @ClassName: Commit 补充统计
  * @Description: commit 补充统计 
@@ -18,22 +20,20 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class CommitStatsPo extends Commit{
 	
 	@Id
-	String _id; //从 gitlab 中读出来
+	String _id; // uuid
 	int addRow; //添加行数
 	int removeRow; //删除行数
 	String projectName;
 	String proid;
-	Set<String> branch;
+	String branch;
 	Date crateDate;
 
-
-
 	public String get_id() {
-		return super.getId();
+		return this._id;
 	}
 
 	public void set_id(String _id) {
-		super.setId(_id);
+		this._id=_id;
 	}
 
 	public int getAddRow() {
@@ -68,11 +68,11 @@ public class CommitStatsPo extends Commit{
 		this.proid = proid;
 	}
 
-	public Set<String> getBranch() {
+	public String getBranch() {
 		return branch;
 	}
 
-	public void setBranch(Set<String> branch) {
+	public void setBranch(String branch) {
 		this.branch = branch;
 	}
 
@@ -84,4 +84,7 @@ public class CommitStatsPo extends Commit{
 		this.crateDate = crateDate;
 	}
 	
+	public CommitStatsPo(){
+		this._id=Commnt.createUUID();
+	}
 }
