@@ -1,14 +1,16 @@
 package com.dataman.gitstats.service;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
+import org.gitlab4j.api.Pager;
 import org.gitlab4j.api.models.Commit;
-import org.gitlab4j.api.models.CommitStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +18,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
-import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.repository.CommitStatsRepository;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
-import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
+import com.dataman.gitstats.vo.CommitStatsVo;
 
 
 @Component
@@ -38,6 +39,8 @@ public class AsyncTask {
 	@Autowired
 	CommitStatsRepository commitStatsRepository;
 	
+	@Autowired
+	StatsCommitAsyncTask statsCommitAsyncTask;
 	/**
 	 * @method initProjectStats(初始化数据)
 	 * @return String
@@ -59,34 +62,36 @@ public class AsyncTask {
 		commitStatsRepository.deleteByProidAndBranch(pid, branch);
 		GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(pbs.getAccountid());
 		//获取当前项目当前分支的所有commit
-		Date currdate=cal.getTime();
-		cal.set(2000, 1, 1);
-		Date begindate=cal.getTime();
-		List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId, branch, begindate, currdate);
-		for (Commit commit : list) {
-			CommitStatsPo csp=new CommitStatsPo();
+		Pager<Commit> page= gitLabApi.getCommitsApi().getCommits(projectId, branch, null, cal.getTime(),100);
+		logger.info(pbs.getProjectname()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
+		CountDownLatch cdl=new CountDownLatch(page.getTotalPages());
+		List<Future<CommitStatsVo>> stats=new ArrayList<>();
+		while (page.hasNext()) {
+			List<Commit> list=  page.next();
+			Future<CommitStatsVo> f= statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pid, branch, page.getCurrentPage(), cdl);
+			stats.add(f);
+		}
+		try {
+			cdl.await();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		for (Future<CommitStatsVo> future : stats) {
 			try {
-				csp=ClassUitl.copyProperties(commit, csp);
-			} catch (Exception e) {
+				CommitStatsVo vo= future.get();
+				addRow+=vo.getAddrow();
+				removeRow+=vo.getRemoverow();
+			} catch (InterruptedException | ExecutionException e) {
 				// TODO Auto-generated catch block
-				logger.info(e.getMessage());
+				e.printStackTrace();
 			}
-			csp.setBranch(branch);
-			csp.setProid(pid);
-			Commit sigleCommit= gitLabApi.getCommitsApi().getCommit(projectId, commit.getId());
-			CommitStats stats= sigleCommit.getStats();
-			csp.setAddRow(stats.getAdditions());
-			csp.setRemoveRow(stats.getDeletions());
-			csp.setCrateDate(new Date());
-			commitStatsRepository.insert(csp);
-			addRow+=stats.getAdditions();
-			removeRow+=stats.getDeletions();
-		}	
+		}
 		pbs.setStatus(1);
 		pbs.setTotalAddRow(addRow);
 		pbs.setTotalDelRow(removeRow);
 		pbs.setTotalRow(addRow-removeRow);
-		pbs.setLastupdate(currdate);
+		pbs.setLastupdate(cal.getTime());
 		try {
 			projectBranchStatsRepository.save(pbs);  //保存跟新记录
 		} catch (Exception e) {

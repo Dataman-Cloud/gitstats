@@ -18,4 +18,5 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,St
 	
 	public Long deleteByProid(String proid);
 
+	
 }

@@ -34,12 +34,26 @@ public class GitLabController extends BaseController{
 	}
 	
 	@ApiOperation(value = "获取项目下面所有分支")
-	@RequestMapping(value="/{aid}/{pid}/projects",method=RequestMethod.GET)
+	@RequestMapping(value="/{aid}/{pid}/branchs",method=RequestMethod.GET)
 	public Object getAllBranch(@ApiParam(required = true, name = "aid", value = "帐号id") @PathVariable String aid,
 			@ApiParam(required = true, name = "pid", value = "项目id") @PathVariable int pid){
 		json.clear();
 		try {
 			setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getRepositoryApi().getBranches(pid));
+		} catch (Exception e) {
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
+	@ApiOperation(value = "获取项目下面所有用户")
+	@RequestMapping(value="/{aid}/{pid}/users",method=RequestMethod.GET)
+	public Object getAllUser(@ApiParam(required = true, name = "aid", value = "帐号id") @PathVariable String aid,
+			@ApiParam(required = true, name = "pid", value = "项目id") @PathVariable int pid){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getProjectApi().getMembers(pid));
 		} catch (Exception e) {
 			e.printStackTrace();
 			setJson(FAIL_CODE, e.getMessage());
