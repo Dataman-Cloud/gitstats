@@ -1,16 +1,26 @@
 package com.dataman.gitstats.service;
 
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+
+import java.util.*;
+
 import java.util.concurrent.Future;
 
+import com.dataman.gitstats.po.PushEventRecord;
+import com.dataman.gitstats.repository.PushEventRecordRepository;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.Pager;
 import org.gitlab4j.api.models.Commit;
+
+import org.gitlab4j.api.models.CommitStats;
+import org.gitlab4j.api.webhook.EventCommit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +45,12 @@ public class AsyncTask {
 	
 	@Autowired
 	ProjectBranchStatsRepository projectBranchStatsRepository;
-	
+
 	@Autowired
 	CommitStatsRepository commitStatsRepository;
+
+	@Autowired
+	PushEventRecordRepository pushEventRecordRepository;
 	
 	@Autowired
 	StatsCommitAsyncTask statsCommitAsyncTask;
@@ -87,6 +100,7 @@ public class AsyncTask {
 				e.printStackTrace();
 			}
 		}
+
 		pbs.setStatus(1);
 		pbs.setTotalAddRow(addRow);
 		pbs.setTotalDelRow(removeRow);
@@ -101,6 +115,46 @@ public class AsyncTask {
 		long usetime = begin-System.currentTimeMillis();
 		logger.info("初始化"+pbs.getProjectname()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
 		return new AsyncResult<String>("初始化完成");  
+	}
+
+	@Async
+	public void saveCommitStatsFromEventCommitsList(PushEventRecord record,ProjectBranchStats projectBranchStats,List<EventCommit> eventCommitList) throws Exception {
+		GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectBranchStats.getAccountid());
+			while (projectBranchStats.getStatus()==0){
+				Thread.sleep(1000);
+				projectBranchStats=projectBranchStatsRepository.findOne(projectBranchStats.getId());
+			}
+		projectBranchStats.setStatus(0);
+		projectBranchStatsRepository.save(projectBranchStats);
+		CommitStatsPo commitStats;
+		for(EventCommit eventCommit:eventCommitList){
+			commitStats=commitStatsRepository.findOne(eventCommit.getId());
+			if(commitStats==null){
+				Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
+				commitStats=new CommitStatsPo();
+				ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
+				commitStats.setProid(projectBranchStats.getProjectid());
+				Set<String> branch=new HashSet<>();
+				branch.add(projectBranchStats.getBranch());
+				commitStats.setBranch(branch);
+				commitStats.setAddRow(commit.getStats().getAdditions());
+				commitStats.setRemoveRow(commit.getStats().getDeletions());
+				commitStats.setCrateDate(new Date());
+
+				projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
+				projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
+				projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+				projectBranchStatsRepository.save(projectBranchStats);
+			}else{
+				commitStats.getBranch().add(projectBranchStats.getBranch());
+			}
+			commitStatsRepository.save(commitStats);
+		}
+		projectBranchStats.setStatus(1);
+		projectBranchStatsRepository.save(projectBranchStats);
+		record.setStatus(record.FINISHED);
+		record.setUpdateAt(new Date());
+		pushEventRecordRepository.save(record);
 	}
 	
 	

@@ -1,6 +1,7 @@
 package com.dataman.gitstats.po;
 
 import java.util.Date;
+import java.util.Set;
 
 import org.gitlab4j.api.models.Commit;
 import org.springframework.data.annotation.Id;
@@ -22,8 +23,10 @@ public class CommitStatsPo extends Commit{
 	int removeRow; //删除行数
 	String projectName;
 	String proid;
-	String branch;
+	Set<String> branch;
 	Date crateDate;
+
+
 
 	public String get_id() {
 		return super.getId();
@@ -65,11 +68,11 @@ public class CommitStatsPo extends Commit{
 		this.proid = proid;
 	}
 
-	public String getBranch() {
+	public Set<String> getBranch() {
 		return branch;
 	}
 
-	public void setBranch(String branch) {
+	public void setBranch(Set<String> branch) {
 		this.branch = branch;
 	}
 

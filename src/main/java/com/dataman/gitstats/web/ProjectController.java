@@ -1,5 +1,6 @@
 package com.dataman.gitstats.web;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,14 +55,14 @@ public class ProjectController extends BaseController {
 	
 	@RequestMapping(value="/",method=RequestMethod.POST)
 	@ApiOperation(value = "添加需要统计的项目")
-	public Object addProject(@Valid @RequestBody AddProjectParam param,BindingResult bingingresult){
+	public Object addProject(@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request){
 		json.clear();
 		if(bingingresult.hasErrors()){
 			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
 			return json;
 		}
 		try {
-			setJson(SUCCESS_CODE, projectService.addProject(param));
+			setJson(SUCCESS_CODE, projectService.addProject(param,request));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

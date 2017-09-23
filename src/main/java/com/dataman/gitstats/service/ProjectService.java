@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import com.dataman.gitstats.po.PushEventRecord;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
+import org.gitlab4j.api.webhook.PushEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -30,6 +32,8 @@ import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Service
 public class ProjectService {
 	
@@ -46,9 +50,15 @@ public class ProjectService {
 	
 	@Autowired
 	AsyncTask asyncTask;
-	
+
 	@Autowired
 	GitlabUtil gitlabUtil;
+
+	@Autowired
+	private CommonService commonService;
+
+	@Autowired
+	private WebHookService webHookService;
 	/**
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
@@ -56,7 +66,7 @@ public class ProjectService {
 	 * @throws Exception 
 	 * @date 2017年9月19日 下午3:12:39
 	 */
-	public int addProject(AddProjectParam param) throws Exception{
+	public int addProject(AddProjectParam param,HttpServletRequest request) throws Exception{
 		int SUCCESS=0,EXISTED=1,NOTEXIST=2;
 		Calendar cal=Calendar.getInstance();
 		//验证是否 存在于 mongodb
@@ -106,6 +116,8 @@ public class ProjectService {
 		for (ProjectBranchStats projectBranchStats : branchs) {
 			asyncTask.initProjectStats(projectBranchStats);
 		}
+		String webHookUrl=commonService.getHookListenerPath(request);
+		webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
 		return SUCCESS;
 	}
 	
@@ -122,6 +134,16 @@ public class ProjectService {
 	
 	public List<ProjectStats> getAll(){
 		return projectRepository.findAll();
+	}
+
+	public ProjectStats findProjectStatsByPushEvent(PushEvent event){
+		Integer projectId=event.getProjectId();
+		String repository=event.getProject().getWebUrl();
+		return projectRepository.findByWeburlAndProId(repository,projectId);
+	}
+
+	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){
+		return projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
 	}
 	
 	public int delProject(String id){

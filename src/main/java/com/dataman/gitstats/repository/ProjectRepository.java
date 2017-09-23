@@ -15,4 +15,6 @@ import com.dataman.gitstats.po.ProjectStats;
 public interface ProjectRepository extends MongoRepository<ProjectStats,String> {
 	
 	ProjectStats findByNameAndAccountId(String name,String accountId);
+
+	ProjectStats findByWeburlAndProId(String weburl,Integer proId);
 }
