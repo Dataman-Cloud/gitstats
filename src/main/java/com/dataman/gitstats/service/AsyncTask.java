@@ -28,9 +28,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
+import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.repository.CommitStatsRepository;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
+import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
 
@@ -75,21 +77,25 @@ public class AsyncTask {
 		commitStatsRepository.deleteByProidAndBranch(pid, branch);
 		GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(pbs.getAccountid());
 		//获取当前项目当前分支的所有commit
+		//分页获取 (每页获取 100个数据)
 		Pager<Commit> page= gitLabApi.getCommitsApi().getCommits(projectId, branch, null, cal.getTime(),100);
 		logger.info(pbs.getProjectname()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
 		CountDownLatch cdl=new CountDownLatch(page.getTotalPages());
 		List<Future<CommitStatsVo>> stats=new ArrayList<>();
+		//异步读取分页信息
 		while (page.hasNext()) {
 			List<Commit> list=  page.next();
 			Future<CommitStatsVo> f= statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pid, branch, page.getCurrentPage(), cdl);
 			stats.add(f);
 		}
+		// 计数机阻塞 返回结果
 		try {
 			cdl.await();
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		// 统计 每页 返回的结果
 		for (Future<CommitStatsVo> future : stats) {
 			try {
 				CommitStatsVo vo= future.get();
@@ -100,7 +106,6 @@ public class AsyncTask {
 				e.printStackTrace();
 			}
 		}
-
 		pbs.setStatus(1);
 		pbs.setTotalAddRow(addRow);
 		pbs.setTotalDelRow(removeRow);
@@ -129,25 +134,42 @@ public class AsyncTask {
 		CommitStatsPo commitStats;
 		for(EventCommit eventCommit:eventCommitList){
 			commitStats=commitStatsRepository.findOne(eventCommit.getId());
-			if(commitStats==null){
-				Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
-				commitStats=new CommitStatsPo();
-				ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
-				commitStats.setProid(projectBranchStats.getProjectid());
-				Set<String> branch=new HashSet<>();
-				branch.add(projectBranchStats.getBranch());
-				commitStats.setBranch(branch);
-				commitStats.setAddRow(commit.getStats().getAdditions());
-				commitStats.setRemoveRow(commit.getStats().getDeletions());
-				commitStats.setCrateDate(new Date());
+//			if(commitStats==null){
+//				Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
+//				commitStats=new CommitStatsPo();
+//				ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
+//				commitStats.setProid(projectBranchStats.getProjectid());
+//				// Set<String> branch=new HashSet<>();
+//				// branch.add(projectBranchStats.getBranch());
+//				commitStats.setBranch(projectBranchStats.getBranch());
+//				commitStats.setAddRow(commit.getStats().getAdditions());
+//				commitStats.setRemoveRow(commit.getStats().getDeletions());
+//				commitStats.setCrateDate(new Date());
+//
+//				projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
+//				projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
+//				projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+//				projectBranchStatsRepository.save(projectBranchStats);
+//			}else{
+//				commitStats.getBranch().add(projectBranchStats.getBranch());
+//			}
+			
+			
+			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
+			commitStats=new CommitStatsPo();
+			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
+			commitStats.setProid(projectBranchStats.getProjectid());
+			// Set<String> branch=new HashSet<>();
+			// branch.add(projectBranchStats.getBranch());
+			commitStats.setBranch(projectBranchStats.getBranch());
+			commitStats.setAddRow(commit.getStats().getAdditions());
+			commitStats.setRemoveRow(commit.getStats().getDeletions());
+			commitStats.setCrateDate(new Date());
 
-				projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
-				projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
-				projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
-				projectBranchStatsRepository.save(projectBranchStats);
-			}else{
-				commitStats.getBranch().add(projectBranchStats.getBranch());
-			}
+			projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
+			projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
+			projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+			projectBranchStatsRepository.save(projectBranchStats);
 			commitStatsRepository.save(commitStats);
 		}
 		projectBranchStats.setStatus(1);
