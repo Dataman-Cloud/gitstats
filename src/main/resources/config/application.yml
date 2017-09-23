@@ -16,6 +16,7 @@ server:
     path: /static/err.html
 
 security:
+  ignored: /webHook/*
   user:
     name: admin
     password: 123456
