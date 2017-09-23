@@ -11,16 +11,26 @@ import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
 import org.gitlab4j.api.webhook.PushEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
 import com.dataman.gitstats.param.AddProjectParam;
+import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.po.ProjectStats;
 import com.dataman.gitstats.repository.CommitStatsRepository;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
 import com.dataman.gitstats.repository.ProjectRepository;
+import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.Commnt;
 import com.dataman.gitstats.util.GitlabUtil;
+import com.dataman.gitstats.vo.CommitStatsVo;
+import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -34,6 +44,9 @@ public class ProjectService {
 	ProjectBranchStatsRepository projectBranchStatsRepository;
 	@Autowired
 	CommitStatsRepository commitStatsRepository;
+	
+	@Autowired
+	MongoTemplate mongoTemplate;
 	
 	@Autowired
 	AsyncTask asyncTask;
@@ -139,6 +152,58 @@ public class ProjectService {
 		projectBranchStatsRepository.deleteByProjectid(id);
 		commitStatsRepository.deleteByProid(id);
 		return SUCCESS;
+	}
+	
+	public ProjectBranchStatsVo showStatsByUser(String pbsId) throws Exception{
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
+		ProjectBranchStatsVo pbsv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsVo());
+		pbsv.setData(statsByUser(pbs));
+		return pbsv;
+	}
+	
+	public ProjectBranchStatsVo showStatsByDay(String pbsId) throws Exception{
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
+		ProjectBranchStatsVo pbsv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsVo());
+		pbsv.setData(statsByDay(pbs));
+		return pbsv;
+	}
+	
+	//	db.getCollection('commitStatsPo').aggregate([
+	//	 {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}},
+	//	 {$group:{_id:"$authorName",addrow:{$sum:"$addRow"},removerow:{$sum:"$removeRow"},commit:{$sum:1}}}
+	//	 ,{$sort:{addrow:-1}}
+	//	 ])
+	public List<CommitStatsVo> statsByUser(ProjectBranchStats pbs){
+		List<CommitStatsVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+			Aggregation.match(new Criteria("proid").is(pbs.getProjectid()).andOperator(new Criteria("branch").is(pbs.getBranch()))),
+			Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow").as("removerow").count().as("commit"),
+			Aggregation.sort(Direction.DESC, "addrow")
+		);
+		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list =ret.getMappedResults();
+		return list;
+	}
+	
+//	db.getCollection('commitStatsPo').aggregate([  
+// 	    {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}}
+//	    ,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 }}
+//	    ,{$group   : { _id : "$day",  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
+//	    ,{$sort :{_id : -1}}
+//	])
+	public List<CommitStatsVo> statsByDay(ProjectBranchStats pbs){
+		List<CommitStatsVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+			Aggregation.match(new Criteria("proid").is(pbs.getProjectid()).andOperator(new Criteria("branch").is(pbs.getBranch()))),
+			Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow").and("$removeRow").as("removeRow"),
+			Aggregation.group(Fields.fields("day")).sum("addRow").as("addrow").sum("removeRow").as("removerow").count().as("commit"),
+			Aggregation.sort(Direction.DESC, "_id")
+		);
+		System.out.println(agg.toString());
+		
+		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list =ret.getMappedResults();
+		return list;
 	}
 	
 }

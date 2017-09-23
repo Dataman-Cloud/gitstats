@@ -36,10 +36,10 @@ public class GitlabUtil {
 		Calendar cal=Calendar.getInstance();
 		GitLabApi gitlabApi =null;
 		if(ga.getType()==1){
-			gitlabApi=new GitLabApi(ApiVersion.V3,ga.getUrl(),ga.getToken());
+			gitlabApi=new GitLabApi(ApiVersion.V4,ga.getUrl(),ga.getToken());
 			ga.setSession(gitlabApi.getSession());
 		}else{
-			gitlabApi =GitLabApi.login(ApiVersion.V3, ga.getUrl(), ga.getUser(), ga.getPwd());
+			gitlabApi =GitLabApi.login(ApiVersion.V4, ga.getUrl(), ga.getUser(), ga.getPwd());
 			ga.setSession(gitlabApi.getSession());
 		}
 		ga.setLastupdate(cal.getTime());
