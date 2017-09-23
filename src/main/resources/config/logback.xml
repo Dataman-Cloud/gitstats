@@ -24,8 +24,9 @@
 	</appender>
 
 	<logger name="org.springframework" level="INFO" />
+	<logger name="org.apache.coyote.http11" level="INFO" />
     
-	<root level="INFO">
+	<root level="debug">
 		<appender-ref ref="console" />
 		<appender-ref ref="FILE" />
 	</root>

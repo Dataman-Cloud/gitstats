@@ -35,7 +35,7 @@ gitlab:
 spring:
   data:
     mongodb:
-        uri: mongodb://admin:123456@192.168.199.32:27027/gitstats
+        uri: mongodb://192.168.199.32:27027/gitstats
   
   
     

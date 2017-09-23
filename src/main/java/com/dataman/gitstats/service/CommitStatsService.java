@@ -9,7 +9,7 @@ import com.dataman.gitstats.repository.CommitStatsRepository;
 @Service
 public class CommitStatsService {
 
-	@Autowired
+	// @Autowired
 	GitLabApi gitLabApi;
 	@Autowired
 	CommitStatsRepository commitStatsRepository;

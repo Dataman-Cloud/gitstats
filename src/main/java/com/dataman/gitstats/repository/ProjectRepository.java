@@ -3,7 +3,7 @@ package com.dataman.gitstats.repository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Component;
 
-import com.dataman.gitstats.po.Project;
+import com.dataman.gitstats.po.ProjectStats;
 /**
  * @ClassName: ProjectRepository
  * @Description: 数据处理 
@@ -12,7 +12,9 @@ import com.dataman.gitstats.po.Project;
  * @Copyright © 2017北京数人科技有限公司
  */
 @Component
-public interface ProjectRepository extends MongoRepository<Project,String> {
+public interface ProjectRepository extends MongoRepository<ProjectStats,String> {
 	
-	Project findByName(String name);
+	ProjectStats findByNameAndAccountId(String name,String accountId);
+
+	ProjectStats findByWeburlAndProId(String weburl,Integer proId);
 }
