@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 @Service
 public class CommonService {
     public String getApplicationUrlByHttpServletRequest(HttpServletRequest request){
-        String url=request.getServerName()+request.getServerName()+request.getServerPort()+request.getContextPath();
+        String url=request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+request.getContextPath();
         return url;
     }
 

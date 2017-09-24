@@ -29,11 +29,11 @@ public class CommitStatsPo extends Commit{
 	Date crateDate;
 
 	public String get_id() {
-		return this._id;
+		return proid+branch+getId();
 	}
 
 	public void set_id(String _id) {
-		this._id=_id;
+		this._id=proid+branch+getId();
 	}
 
 	public int getAddRow() {
@@ -85,6 +85,6 @@ public class CommitStatsPo extends Commit{
 	}
 	
 	public CommitStatsPo(){
-		this._id=Commnt.createUUID();
+
 	}
 }

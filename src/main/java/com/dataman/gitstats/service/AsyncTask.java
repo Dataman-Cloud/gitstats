@@ -138,7 +138,6 @@ public class AsyncTask {
 		projectBranchStatsRepository.save(projectBranchStats);
 		CommitStatsPo commitStats;
 		for(EventCommit eventCommit:eventCommitList){
-			commitStats=commitStatsRepository.findOne(eventCommit.getId());
 			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
 			commitStats=new CommitStatsPo();
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});

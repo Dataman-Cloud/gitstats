@@ -116,6 +116,7 @@ public class ProjectService {
 		for (ProjectBranchStats projectBranchStats : branchs) {
 			asyncTask.initProjectStats(projectBranchStats);
 		}
+
 		 String webHookUrl=commonService.getHookListenerPath(request);
 		 webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
 		return SUCCESS;
@@ -140,10 +141,14 @@ public class ProjectService {
 		return projectRepository.findByWeburlAndProId(projectWebUrl,projectId);
 	}
 
+	public ProjectStats findProjectStatsById(String projectId){
+		return projectRepository.findOne(projectId);
+	}
+
 	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){
 		return projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
 	}
-	
+
 	public int delProject(String id){
 		int SUCCESS=0;
 		projectRepository.delete(id);

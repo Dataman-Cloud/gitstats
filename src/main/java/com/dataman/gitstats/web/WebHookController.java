@@ -1,18 +1,19 @@
 package com.dataman.gitstats.web;
 
 import com.dataman.gitstats.service.WebHookService;
+import io.swagger.annotations.ApiParam;
+import org.gitlab4j.api.models.ProjectHook;
 import org.gitlab4j.api.webhook.PushEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 @Api(value = "webHook API")
 @RestController
@@ -22,6 +23,15 @@ public class WebHookController extends BaseController {
 	private  Logger logger= LoggerFactory.getLogger(this.getClass());
 	@Autowired
 	private WebHookService hookService;
+
+	@RequestMapping(value = "get/{projectId}",method = RequestMethod.GET)
+	@ApiOperation(value = "gitlab的webHook接收方法", notes = "gitlab的webHook接收方法")
+	public Object getProjectHooks(HttpServletRequest request,@ApiParam(required = true, name = "projectId", value = "项目id")@PathVariable String projectId) throws Exception {
+		json.clear();
+		List<ProjectHook> hooks= hookService.getProjectHook(projectId);
+		setJson(hooks);
+		return json;
+	}
 
 	@RequestMapping(value="/listener",method=RequestMethod.POST)
 	@ApiOperation(value = "gitlab的webHook接收方法", notes = "gitlab的webHook接收方法")

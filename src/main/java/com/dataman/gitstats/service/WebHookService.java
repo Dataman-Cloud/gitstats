@@ -135,13 +135,22 @@ public class WebHookService {
     }
 
     public void addGitlabPushEventWebHook(ProjectStats projectStats,String applicationUrl) throws Exception{
+        logger.info("*********************hook url:{}",applicationUrl);
         GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectStats.getAccountId());
         ProjectHook projectHook=new ProjectHook();
         projectHook.setPushEvents(true);
         projectHook.setMergeRequestsEvents(true);
         projectHook.setUrl(applicationUrl);
-        projectHook.setToken(null);
+        projectHook.setToken("123");
         gitLabApi.getProjectApi().addHook(projectStats.getProId(),applicationUrl,projectHook,true,null);
+        logger.info("**************************添加成功*****************");
+    }
+
+    public List<ProjectHook> getProjectHook(String projectId) throws Exception {
+
+        ProjectStats projectStats=projectService.findProjectStatsById(projectId);
+        GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectStats.getAccountId());
+        return gitLabApi.getProjectApi().getHooks(projectStats.getProId());
     }
 
     public boolean isValidSecretToken(HttpServletRequest request) {
