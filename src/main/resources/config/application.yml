@@ -26,6 +26,7 @@ logging:
   level: INFO
   path: ../logs
 
+
 swagger:
   enabled: true
   title: gitlab-code-statistics
