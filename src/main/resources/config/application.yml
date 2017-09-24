@@ -36,6 +36,9 @@ spring:
   data:
     mongodb:
         uri: mongodb://192.168.199.32:27027/gitstats
+#hook配置 项目token
+#hook:
+#  secretToken:
   
     
   

@@ -136,10 +136,8 @@ public class ProjectService {
 		return projectRepository.findAll();
 	}
 
-	public ProjectStats findProjectStatsByPushEvent(PushEvent event){
-		Integer projectId=event.getProjectId();
-		String repository=event.getProject().getWebUrl();
-		return projectRepository.findByWeburlAndProId(repository,projectId);
+	public ProjectStats findProjectStatsByIdAndUrl(Integer projectId,String projectWebUrl){
+		return projectRepository.findByWeburlAndProId(projectWebUrl,projectId);
 	}
 
 	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){

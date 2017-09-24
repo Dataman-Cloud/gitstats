@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Api(value = "webHook API")
 @RestController
 @RequestMapping(value = "/webHook", produces = "application/json;charset=utf-8")
@@ -23,8 +25,8 @@ public class WebHookController extends BaseController {
 
 	@RequestMapping(value="/listener",method=RequestMethod.POST)
 	@ApiOperation(value = "gitlab的webHook接收方法", notes = "gitlab的webHook接收方法")
-	public Object receiveWebHook(PushEvent  event) throws Exception {
-		hookService.handlePushEvent(event);
+	public Object receiveWebHook(HttpServletRequest request) throws Exception {
+		hookService.handleWebHookEvent(request);
 		json.clear();
 		return json;
 	}
