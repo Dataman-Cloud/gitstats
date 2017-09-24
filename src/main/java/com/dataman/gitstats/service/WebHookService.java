@@ -5,6 +5,7 @@ import com.dataman.gitstats.po.ProjectBranchStats;
 import com.dataman.gitstats.po.ProjectStats;
 import com.dataman.gitstats.po.PushEventRecord;
 import com.dataman.gitstats.properties.HookProperties;
+import com.dataman.gitstats.properties.SwaggerProperties;
 import com.dataman.gitstats.repository.*;
 import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
@@ -17,6 +18,7 @@ import org.gitlab4j.api.webhook.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +29,7 @@ import java.util.List;
  * Created by biancl on 2017-09-21.
  */
 @Service
+@EnableConfigurationProperties(HookProperties.class)
 public class WebHookService {
 
     private   Logger logger= LoggerFactory.getLogger(this.getClass());
@@ -115,7 +118,7 @@ public class WebHookService {
             ProjectBranchStats branchStats=projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getObjectAttributes().getTargetBranch());
             if(branchStats!=null){
                 record.setStatus(record.HANDLING);
-                List<Commit> commits=getMergetRequestCommits(projectStats,event);
+                List<Commit> commits=getMergetRequestCommits(projectStats, event);
                 asyncTask.saveCommitStatsFromMergeRequestEventCommitsList(record, branchStats, commits);
             }else{
                 record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);

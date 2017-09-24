@@ -54,8 +54,8 @@ public class ProjectService {
 	@Autowired
 	GitlabUtil gitlabUtil;
 
-	// @Autowired
-	// private CommonService commonService;
+	 @Autowired
+	 private CommonService commonService;
 
 	@Autowired
 	private WebHookService webHookService;
@@ -116,8 +116,8 @@ public class ProjectService {
 		for (ProjectBranchStats projectBranchStats : branchs) {
 			asyncTask.initProjectStats(projectBranchStats);
 		}
-		// String webHookUrl=commonService.getHookListenerPath(request);
-		// webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
+		 String webHookUrl=commonService.getHookListenerPath(request);
+		 webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
 		return SUCCESS;
 	}
 	
