@@ -15,6 +15,12 @@ server:
   error:
     path: /static/err.html
 
+security:
+  ignored: /webHook/*
+  user:
+    name: admin
+    password: 123456
+
 logging:
   config: classpath:config/logback.xml
   level: INFO
