@@ -60,8 +60,8 @@ public class ProjectService {
 	@Autowired
 	GitlabUtil gitlabUtil;
 
-	// @Autowired
-	// private CommonService commonService;
+	 @Autowired
+	 private CommonService commonService;
 
 	@Autowired
 	private WebHookService webHookService;
@@ -126,8 +126,9 @@ public class ProjectService {
 		for (ProjectBranchStats projectBranchStats : branchs) {
 			asyncTask.initProjectStats(projectBranchStats);
 		}
-		// String webHookUrl=commonService.getHookListenerPath(request);
-		// webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
+
+		 String webHookUrl=commonService.getHookListenerPath(request);
+		 webHookService.addGitlabPushEventWebHook(ps,webHookUrl);
 		return SUCCESS;
 	}
 	
@@ -151,16 +152,18 @@ public class ProjectService {
 		return projectRepository.findAll();
 	}
 
-	public ProjectStats findProjectStatsByPushEvent(PushEvent event){
-		Integer projectId=event.getProjectId();
-		String repository=event.getProject().getWebUrl();
-		return projectRepository.findByWeburlAndProId(repository,projectId);
+	public ProjectStats findProjectStatsByIdAndUrl(Integer projectId,String projectWebUrl){
+		return projectRepository.findByWeburlAndProId(projectWebUrl,projectId);
+	}
+
+	public ProjectStats findProjectStatsById(String projectId){
+		return projectRepository.findOne(projectId);
 	}
 
 	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){
 		return projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
 	}
-	
+
 	public int delProject(String id){
 		int SUCCESS=0;
 		projectRepository.delete(id);
