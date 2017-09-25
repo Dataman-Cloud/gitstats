@@ -17,4 +17,6 @@ public interface ProjectBranchStatsRepository extends MongoRepository<ProjectBra
 	
 	public Long deleteByProjectid(String projectid);
 	
+	public List<ProjectBranchStats> findByProjectidIn(List<String> ids);
+	
 }

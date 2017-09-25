@@ -1,6 +1,11 @@
 package com.dataman.gitstats.service;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -62,7 +67,7 @@ public class ProjectService {
 	private WebHookService webHookService;
 	
 	
-	SimpleDateFormat formatter = new SimpleDateFormat("");
+	SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD");
 	
 	/**
 	 * @method addProject(添加需要统计的项目)
@@ -138,6 +143,11 @@ public class ProjectService {
 	}
 	
 	public List<ProjectStats> getAll(){
+		List<ProjectStats> list=projectRepository.findAll();
+		List<String> ids=new ArrayList<String>();
+		list.forEach(ps -> ids.add(ps.getId()));
+		List<ProjectBranchStats> chlids= projectBranchStatsRepository.findByProjectidIn(ids);
+		chlids.stream();
 		return projectRepository.findAll();
 	}
 
@@ -209,8 +219,7 @@ public class ProjectService {
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();
 		//补充 缺省日期数据  补充 到 当前
-		
-		
+		list =complementDay(list,null);
 		return list;
 	}
 	/**
@@ -218,23 +227,45 @@ public class ProjectService {
 	 * @param beginDate 开始日期  null -> list第一个时间
 	 * @return List<CommitStatsVo>
 	 * @author liuqing
+	 * @throws ParseException 
 	 * @date 2017年9月24日 上午10:37:09
 	 */
 	public List<CommitStatsVo> complementDay(List<CommitStatsVo> list,Date beginDate){
+		LocalDate today = LocalDate.now();
+		LocalDate loopday=null;
+		// mongo查询出来的UnmodifiableRandomAccessList是一个 不可以修改
+		System.out.println(list.getClass());
 		
-		Calendar cal=Calendar.getInstance();
-		Date currdate=cal.getTime();
 		if(beginDate==null){
-			
+			loopday = LocalDate.parse(list.get(0).get_id());
+		}else{
+			 Instant instant = beginDate.toInstant();
+		     ZoneId zoneId = ZoneId.systemDefault();
+		     loopday = instant.atZone(zoneId).toLocalDate();
 		}
-		
-		while(true){
-			break;
+		List<CommitStatsVo> tmp= new ArrayList<CommitStatsVo>();
+		int index=0;
+		while (loopday.toEpochDay()<=today.toEpochDay()) {
+			if(list.size()-1<index){
+				CommitStatsVo csv=new CommitStatsVo();
+				csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
+				tmp.add(csv);
+			}else{
+				LocalDate cld=LocalDate.parse(list.get(index).get_id());
+				if(cld.toEpochDay()!=loopday.toEpochDay()){
+					CommitStatsVo csv=new CommitStatsVo();
+					csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
+					tmp.add(csv);
+				}else{
+					tmp.add(list.get(index));
+					index++;
+				}
+			}
+			long nextday=loopday.toEpochDay()+1;
+			loopday=LocalDate.ofEpochDay(nextday);
 		}
-		
-		return list;
+		return tmp;
 	}
-	
 	
 	
 	

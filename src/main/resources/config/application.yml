@@ -12,8 +12,6 @@
 #
 server:
   port: 8081
-  error:
-    path: /static/err.html
 
 security:
   ignored: /webHook/*
@@ -43,7 +41,12 @@ spring:
   data:
     mongodb:
         uri: mongodb://192.168.199.32:27027/gitstats
-  
-    
+  devtools:
+    restart:
+      additional-paths: src\main\resources\static
+  resources:
+    chain:
+      html-application-cache: true
+ 
   
   
