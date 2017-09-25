@@ -1,10 +1,18 @@
 package com.dataman.gitstats.service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
-import com.dataman.gitstats.po.PushEventRecord;
+import javax.servlet.http.HttpServletRequest;
+
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Project;
@@ -32,8 +40,6 @@ import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 
-import javax.servlet.http.HttpServletRequest;
-
 @Service
 public class ProjectService {
 	
@@ -59,6 +65,10 @@ public class ProjectService {
 
 	@Autowired
 	private WebHookService webHookService;
+	
+	
+	SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD");
+	
 	/**
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
@@ -134,6 +144,11 @@ public class ProjectService {
 	}
 	
 	public List<ProjectStats> getAll(){
+		List<ProjectStats> list=projectRepository.findAll();
+		List<String> ids=new ArrayList<String>();
+		list.forEach(ps -> ids.add(ps.getId()));
+		List<ProjectBranchStats> chlids= projectBranchStatsRepository.findByProjectidIn(ids);
+		chlids.stream();
 		return projectRepository.findAll();
 	}
 
@@ -200,13 +215,61 @@ public class ProjectService {
 			Aggregation.match(new Criteria("proid").is(pbs.getProjectid()).andOperator(new Criteria("branch").is(pbs.getBranch()))),
 			Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow").and("$removeRow").as("removeRow"),
 			Aggregation.group(Fields.fields("day")).sum("addRow").as("addrow").sum("removeRow").as("removerow").count().as("commit"),
-			Aggregation.sort(Direction.DESC, "_id")
+			Aggregation.sort(Direction.ASC, "_id")
 		);
 		System.out.println(agg.toString());
 		
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();
+		//补充 缺省日期数据  补充 到 当前
+		list =complementDay(list,null);
 		return list;
 	}
+	/**
+	 * @method complementDay(缺省日期数据)
+	 * @param beginDate 开始日期  null -> list第一个时间
+	 * @return List<CommitStatsVo>
+	 * @author liuqing
+	 * @throws ParseException 
+	 * @date 2017年9月24日 上午10:37:09
+	 */
+	public List<CommitStatsVo> complementDay(List<CommitStatsVo> list,Date beginDate){
+		LocalDate today = LocalDate.now();
+		LocalDate loopday=null;
+		// mongo查询出来的UnmodifiableRandomAccessList是一个 不可以修改
+		System.out.println(list.getClass());
+		
+		if(beginDate==null){
+			loopday = LocalDate.parse(list.get(0).get_id());
+		}else{
+			 Instant instant = beginDate.toInstant();
+		     ZoneId zoneId = ZoneId.systemDefault();
+		     loopday = instant.atZone(zoneId).toLocalDate();
+		}
+		List<CommitStatsVo> tmp= new ArrayList<CommitStatsVo>();
+		int index=0;
+		while (loopday.toEpochDay()<=today.toEpochDay()) {
+			if(list.size()-1<index){
+				CommitStatsVo csv=new CommitStatsVo();
+				csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
+				tmp.add(csv);
+			}else{
+				LocalDate cld=LocalDate.parse(list.get(index).get_id());
+				if(cld.toEpochDay()!=loopday.toEpochDay()){
+					CommitStatsVo csv=new CommitStatsVo();
+					csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
+					tmp.add(csv);
+				}else{
+					tmp.add(list.get(index));
+					index++;
+				}
+			}
+			long nextday=loopday.toEpochDay()+1;
+			loopday=LocalDate.ofEpochDay(nextday);
+		}
+		return tmp;
+	}
+	
+	
 	
 }

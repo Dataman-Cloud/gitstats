@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>gitstats</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin:0;
+}
+a {
+	text-decoration: none;
+}
+#app {
+	width: 100%;
+    max-width: 100%;
+    overflow: -webkit-paged-x;
+    overflow-x: hidden;
+}
+
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24">
+		
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<script src="js/echarts.min.js"></script>
+	<script>
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '1',
+				}
+			},
+		    methods: {
+		    	getProject(){
+		    		
+		    	}
+		    }, 
+		    mounted () {
+			   console.log("init");
+		    }
+		})
+	</script>
+</body>
+</html>
