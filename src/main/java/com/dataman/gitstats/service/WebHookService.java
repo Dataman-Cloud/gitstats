@@ -32,7 +32,7 @@ import java.util.List;
 @EnableConfigurationProperties(HookProperties.class)
 public class WebHookService {
 
-    private   Logger logger= LoggerFactory.getLogger(this.getClass());
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final JacksonJson jacksonJson = new JacksonJson();
 
@@ -56,18 +56,20 @@ public class WebHookService {
 
 
     public PushEventRecord addPushEventRecord(PushEvent event) throws Exception {
-        PushEventRecord record=new PushEventRecord();
-        ClassUitl.copyProperties(event,record);
+        PushEventRecord record = new PushEventRecord();
+        ClassUitl.copyProperties(event, record);
+        record.setId_(record.getBefore() + record.getAfter());
         return recordRepository.save(record);
     }
 
     public MergeRequestEventRecord addMergeRequestEventRecord(MergeRequestEvent event) throws Exception {
-        MergeRequestEventRecord record=new MergeRequestEventRecord();
-        ClassUitl.copyProperties(event,record);
+        MergeRequestEventRecord record = new MergeRequestEventRecord();
+        ClassUitl.copyProperties(event, record);
+        record.setId_(event.getObjectAttributes().getUrl());
         return mergeRequestEventRecordRepository.save(record);
     }
 
-    public void handleWebHookEvent(HttpServletRequest request) throws Exception{
+    public void handleWebHookEvent(HttpServletRequest request) throws Exception {
         if (!isValidSecretToken(request)) {
             String message = "X-Gitlab-Token mismatch!";
             throw new GitLabApiException(message);
@@ -75,14 +77,21 @@ public class WebHookService {
 
         String eventName = request.getHeader("X-Gitlab-Event");
         InputStreamReader reader = new InputStreamReader(request.getInputStream());
-        Event event= jacksonJson.unmarshal(Event.class, reader);;
+        Event event = jacksonJson.unmarshal(Event.class, reader);
+        ;
         switch (eventName) {
-            case BuildEvent.X_GITLAB_EVENT:break;
-            case IssueEvent.X_GITLAB_EVENT:break;
-            case MergeRequestEvent.X_GITLAB_EVENT:handleMergeRequestEvent((MergeRequestEvent)event);
-            case NoteEvent.X_GITLAB_EVENT:break;
-            case PipelineEvent.X_GITLAB_EVENT:break;
-            case PushEvent.X_GITLAB_EVENT:handlePushEvent((PushEvent)event);
+            case BuildEvent.X_GITLAB_EVENT:
+                break;
+            case IssueEvent.X_GITLAB_EVENT:
+                break;
+            case MergeRequestEvent.X_GITLAB_EVENT:
+                handleMergeRequestEvent((MergeRequestEvent) event);
+            case NoteEvent.X_GITLAB_EVENT:
+                break;
+            case PipelineEvent.X_GITLAB_EVENT:
+                break;
+            case PushEvent.X_GITLAB_EVENT:
+                handlePushEvent((PushEvent) event);
             case TagPushEvent.X_GITLAB_EVENT:
             case WikiPageEvent.X_GITLAB_EVENT:
                 break;
@@ -95,61 +104,67 @@ public class WebHookService {
     }
 
     public void handlePushEvent(PushEvent event) throws Exception {
-        PushEventRecord record=this.addPushEventRecord(event);
-        ProjectStats projectStats=projectService.findProjectStatsByIdAndUrl(event.getProjectId(), event.getProject().getWebUrl());
-        if(projectStats!=null){
-            ProjectBranchStats branchStats=projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getBranch());
-            if(branchStats!=null){
-                record.setStatus(record.HANDLING);
-                asyncTask.saveCommitStatsFromPushEventCommitsList(record, branchStats, record.getCommits());
-            }else{
-                record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);
+        if (recordRepository.findOne(event.getBefore() + event.getAfter()) == null) {
+
+            PushEventRecord record = this.addPushEventRecord(event);
+            ProjectStats projectStats = projectService.findProjectStatsByIdAndUrl(event.getProjectId(), event.getProject().getWebUrl());
+            if (projectStats != null) {
+                ProjectBranchStats branchStats = projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getBranch());
+                if (branchStats != null) {
+                    record.setStatus(record.HANDLING);
+                    asyncTask.saveCommitStatsFromPushEventCommitsList(record, branchStats, record.getCommits());
+                } else {
+                    record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);
+                }
+            } else {
+                record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_PROJECT);
             }
-        } else {
-            record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_PROJECT);
+            recordRepository.save(record);
         }
-        recordRepository.save(record);
     }
 
     public void handleMergeRequestEvent(MergeRequestEvent event) throws Exception {
-        MergeRequestEventRecord record=this.addMergeRequestEventRecord(event);
-        ProjectStats projectStats=projectService.findProjectStatsByIdAndUrl(event.getObjectAttributes().getProjectId(),event.getObjectAttributes().getUrl());
-        if(projectStats!=null){
-            ProjectBranchStats branchStats=projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getObjectAttributes().getTargetBranch());
-            if(branchStats!=null){
-                record.setStatus(record.HANDLING);
-                List<Commit> commits=getMergetRequestCommits(projectStats, event);
-                asyncTask.saveCommitStatsFromMergeRequestEventCommitsList(record, branchStats, commits);
-            }else{
-                record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);
+        if (mergeRequestEventRecordRepository.findOne(event.getObjectAttributes().getUrl()) == null) {
+
+            MergeRequestEventRecord record = this.addMergeRequestEventRecord(event);
+            ProjectStats projectStats = projectService.findProjectStatsByIdAndUrl(event.getObjectAttributes().getProjectId(), event.getObjectAttributes().getUrl());
+            if (projectStats != null) {
+                ProjectBranchStats branchStats = projectService.findProjectBranchStatsByProjectIdAndBranch(projectStats.getId(), event.getObjectAttributes().getTargetBranch());
+                if (branchStats != null) {
+                    record.setStatus(record.HANDLING);
+                    List<Commit> commits = getMergetRequestCommits(projectStats, event);
+                    asyncTask.saveCommitStatsFromMergeRequestEventCommitsList(record, branchStats, commits);
+                } else {
+                    record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_BRANCH);
+                }
+            } else {
+                record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_PROJECT);
             }
-        } else {
-            record.setStatus(record.NEED_NOT_HANDLE_NO_THIS_PROJECT);
+            mergeRequestEventRecordRepository.save(record);
         }
-        mergeRequestEventRecordRepository.save(record);
     }
 
-    public List<Commit> getMergetRequestCommits(ProjectStats projectStats,MergeRequestEvent event) throws Exception {
-        GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectStats.getAccountId());
-        return gitLabApi.getMergeRequestApi().getCommits(event.getObjectAttributes().getProjectId(),event.getObjectAttributes().getIid());
+    public List<Commit> getMergetRequestCommits(ProjectStats projectStats, MergeRequestEvent event) throws Exception {
+        GitLabApi gitLabApi = gitlabUtil.getGitLabApi(projectStats.getAccountId());
+        return gitLabApi.getMergeRequestApi().getCommits(event.getObjectAttributes().getProjectId(), event.getObjectAttributes().getIid());
     }
 
-    public void addGitlabPushEventWebHook(ProjectStats projectStats,String applicationUrl) throws Exception{
-        logger.info("*********************hook url:{}",applicationUrl);
-        GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectStats.getAccountId());
-        ProjectHook projectHook=new ProjectHook();
+    public void addGitlabPushEventWebHook(ProjectStats projectStats, String applicationUrl) throws Exception {
+        logger.info("*********************hook url:{}", applicationUrl);
+        GitLabApi gitLabApi = gitlabUtil.getGitLabApi(projectStats.getAccountId());
+        ProjectHook projectHook = new ProjectHook();
         projectHook.setPushEvents(true);
         projectHook.setMergeRequestsEvents(true);
         projectHook.setUrl(applicationUrl);
         projectHook.setToken("123");
-        gitLabApi.getProjectApi().addHook(projectStats.getProId(),applicationUrl,projectHook,true,null);
+        gitLabApi.getProjectApi().addHook(projectStats.getProId(), applicationUrl, projectHook, true, null);
         logger.info("**************************添加成功*****************");
     }
 
     public List<ProjectHook> getProjectHook(String projectId) throws Exception {
 
-        ProjectStats projectStats=projectService.findProjectStatsById(projectId);
-        GitLabApi gitLabApi=gitlabUtil.getGitLabApi(projectStats.getAccountId());
+        ProjectStats projectStats = projectService.findProjectStatsById(projectId);
+        GitLabApi gitLabApi = gitlabUtil.getGitLabApi(projectStats.getAccountId());
         return gitLabApi.getProjectApi().getHooks(projectStats.getProId());
     }
 
@@ -166,7 +181,6 @@ public class WebHookService {
     public boolean isValidSecretToken(String secretToken) {
         return (hookProperties.getSecretToken() == null || hookProperties.getSecretToken().equals(secretToken) ? true : false);
     }
-
 
 
 }

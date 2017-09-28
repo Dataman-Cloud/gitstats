@@ -29,7 +29,7 @@ public class CommitStatsPo extends Commit{
 	Date crateDate;
 
 	public String get_id() {
-		return proid+branch+getId();
+		return _id;
 	}
 
 	public void set_id(String _id) {
@@ -74,6 +74,7 @@ public class CommitStatsPo extends Commit{
 
 	public void setBranch(String branch) {
 		this.branch = branch;
+		this._id=proid+branch+getId();
 	}
 
 	public Date getCrateDate() {
@@ -82,9 +83,5 @@ public class CommitStatsPo extends Commit{
 
 	public void setCrateDate(Date crateDate) {
 		this.crateDate = crateDate;
-	}
-	
-	public CommitStatsPo(){
-
 	}
 }
