@@ -1,6 +1,7 @@
 package com.dataman.gitstats.po;
 
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,6 +26,10 @@ public class ProjectStats {
 	String weburl;
 	int webhookstatus; // 0 未配置　１已配置
 	String dsc;
+	
+	//没有 建立 dbref的关系  采用二次查询策略来进行获取 来避免关系维护
+	List<ProjectBranchStats> branchs;
+	
 	
 	public String getId() {
 		return id;
@@ -79,6 +84,12 @@ public class ProjectStats {
 	}
 	public void setDsc(String dsc) {
 		this.dsc = dsc;
+	}
+	public List<ProjectBranchStats> getBranchs() {
+		return branchs;
+	}
+	public void setBranchs(List<ProjectBranchStats> branchs) {
+		this.branchs = branchs;
 	}
 	
 }

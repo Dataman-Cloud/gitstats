@@ -40,6 +40,20 @@ public class ProjectController extends BaseController {
 		return json;
 	}
 	
+	@RequestMapping(value="/branchs",method=RequestMethod.GET)
+	@ApiOperation(value = "获取所有需要统计的项目")
+	public Object getAllBranchs(){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectService.getAllBranchs());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
 	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
 	@ApiOperation(value = "获取所有需要统计的项目")
 	public Object delProject(@ApiParam(required = true, name = "id", value = "项目id") @PathVariable  String id){
