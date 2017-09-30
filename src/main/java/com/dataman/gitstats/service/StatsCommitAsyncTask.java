@@ -31,7 +31,7 @@ public class StatsCommitAsyncTask {
 	
 	@Async
 	public Future<CommitStatsVo> commitstats(List<Commit> list,GitLabApi api,int pid,
-			String proid,String branch,int pageNum,CountDownLatch cdl) throws GitLabApiException{
+			String branchId,int pageNum,CountDownLatch cdl) throws GitLabApiException{
 		logger.info("加载第"+pageNum+"页数据");
 		long begin = System.currentTimeMillis();
 		int addRow=0;
@@ -45,10 +45,10 @@ public class StatsCommitAsyncTask {
 				// TODO Auto-generated catch block
 				logger.info(e.getMessage());
 			}
-			csp.setBranch(branch);
-			csp.setProid(proid);
+			csp.setBranchId(branchId);
 			Commit sigleCommit= api.getCommitsApi().getCommit(pid, commit.getId());
 			CommitStats stats= sigleCommit.getStats();
+			csp.set_id();
 			csp.setAddRow(stats.getAdditions());
 			csp.setRemoveRow(stats.getDeletions());
 			csp.setCrateDate(new Date());

@@ -71,26 +71,24 @@ public class AsyncTask {
 	 */
 	@Async
 	public Future<String> initProjectStats(ProjectBranchStats pbs) throws GitLabApiException{
-		logger.info("初始化开始:"+pbs.getProjectname()+"."+pbs.getBranch());
+		logger.info("初始化开始:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
 		Calendar cal =Calendar.getInstance();
 		long begin = System.currentTimeMillis();
 		int addRow=0,removeRow=0;
 		int projectId= pbs.getProid();
 		String branch=pbs.getBranch();
-		String pid=pbs.getProjectid();
-		// 清理数据 
-		commitStatsRepository.deleteByProidAndBranch(pid, branch);
+		// 清理数据
 		GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(pbs.getAccountid());
 		//获取当前项目当前分支的所有commit
 		//分页获取 (每页获取 100个数据)
 		Pager<Commit> page= gitLabApi.getCommitsApi().getCommits(projectId, branch, null, cal.getTime(),100);
-		logger.info(pbs.getProjectname()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
+		logger.info(pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
 		CountDownLatch cdl=new CountDownLatch(page.getTotalPages());
 		List<Future<CommitStatsVo>> stats=new ArrayList<>();
 		//异步读取分页信息
 		while (page.hasNext()) {
 			List<Commit> list=  page.next();
-			Future<CommitStatsVo> f= statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pid, branch, page.getCurrentPage(), cdl);
+			Future<CommitStatsVo> f= statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pbs.getId(), page.getCurrentPage(), cdl);
 			stats.add(f);
 		}
 		// 计数机阻塞 返回结果
@@ -123,7 +121,7 @@ public class AsyncTask {
 		}
 		logger.info("update success");
 		long usetime = begin-System.currentTimeMillis();
-		logger.info("初始化"+pbs.getProjectname()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
+		logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
 		return new AsyncResult<String>("初始化完成");  
 	}
 
@@ -141,10 +139,9 @@ public class AsyncTask {
 			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
 			commitStats=new CommitStatsPo();
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
-			commitStats.setProid(projectBranchStats.getProjectid());
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
-			commitStats.setBranch(projectBranchStats.getBranch());
+			commitStats.setBranchId(projectBranchStats.getId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());
 			commitStats.setCrateDate(new Date());
@@ -177,10 +174,9 @@ public class AsyncTask {
 			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
 			commitStats=new CommitStatsPo();
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
-			commitStats.setProid(projectBranchStats.getProjectid());
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
-			commitStats.setBranch(projectBranchStats.getBranch());
+			commitStats.setBranchId(projectBranchStats.getId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());
 			commitStats.setCrateDate(new Date());

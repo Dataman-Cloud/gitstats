@@ -1,78 +1,381 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>GITSTATS</title>
-<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
-<link rel="stylesheet" href="css/element-index.css">
-<style>
-body {
-	margin:0;
-}
-a {
-	text-decoration: none;
-}
-#app {
-	width: 100%;
-    max-width: 100%;
-    overflow: -webkit-paged-x;
-    overflow-x: hidden;
-}
-#menudiv {
-	background-color: #324157;
-	margin-bottom: 10px;
-}
+	<meta charset="UTF-8">
+	<title>GITSTATS</title>
+	<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+	<link rel="stylesheet" href="css/element-index.css">
+	<style>
+		body {
+			margin: 0;
+		}
 
-</style>
+		a {
+			text-decoration: none;
+		}
+
+		#app {
+			width: 100%;
+			max-width: 100%;
+			overflow: -webkit-paged-x;
+			overflow-x: hidden;
+		}
+
+		#menudiv {
+			background-color: #324157;
+			margin-bottom: 10px;
+		}
+
+	</style>
 </head>
 <body>
 
-	<div id="app">
-		<el-row> <el-col :span="24">
-		<div class="grid-content bg-purple-dark" id="menudiv">
-			<el-row :gutter="20">
-				<el-col :span="16" :offset="4">
-				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
-					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item> 
-					<el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item>
-					<el-menu-item index="3"> <a href="branch.html">版本管理</a></el-menu-item>
-					<el-menu-item index="4"> <a href="commit.html">COMMIT记录</a></el-menu-item>
-					<el-menu-item index="5"> <a href="webhook.html">PUSH记录</a></el-menu-item>
-				</el-menu>
-				
-				</el-col>
-			</el-row>
-		</div>
-		
+<div id="app">
+	<div class="grid-content bg-purple-dark" id="menudiv">
 		<el-row :gutter="20">
 			<el-col :span="16" :offset="4">
-			
-			
+				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
+					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item>
+					<el-menu-item index="2"><a href="project.html">项目管理</a></el-menu-item>
+					<!--<el-menu-item index="3"><a href="branch.html">版本管理</a></el-menu-item>-->
+					<el-menu-item index="4"><a href="commit.html">COMMIT记录</a></el-menu-item>
+					<el-menu-item index="5"><a href="webhook.html">PUSH记录</a></el-menu-item>
+				</el-menu>
+
 			</el-col>
 		</el-row>
-		
-		
-		</el-col> </el-row>
 	</div>
 
+	<el-row>
+		<el-col :span="22" :offset="1">
+			<el-button type="primary" icon="plus" @click="openDialog">添加</el-button>
+			<!--<el-button type="primary" icon="upload2" @click="export1()">导出</el-button>-->
+		</el-col>
+	</el-row>
 
-	<script src="js/Vue.js"></script>
-	<script src="js/element-ui.js"></script>
-	<script src="js/axios.min.js"></script>
-	<script>
-		new Vue({
-			el : '#app',
-			data : function() {
-				return {
-					activeIndex: '2',
-				}
+	<el-row>
+		<el-col :span="22" :offset="1">
+			<el-table
+					:data="projects"
+					:empty-text="emptyText"
+			>
+				<el-table-column
+						prop="weburl"
+						label="gitlab地址"
+				>
+				</el-table-column>
+				<el-table-column
+						prop="projectNameWithNamespace"
+						label="项目名称"
+				>
+				</el-table-column>
+				<el-table-column
+						prop="branch"
+						label="分支名称"
+				>
+				</el-table-column>
+				<el-table-column
+						prop="showLastupdate"
+						label="修改日期">
+				</el-table-column>
+				<el-table-column
+						label="操作">
+					<template scope="scope">
+						<el-button @click="showEdit(scope.row)" type="info" icon="edit" size="small">编辑</el-button>
+						<el-button @click="del(scope.row.id)" type="danger" icon="delete" size="small">删除</el-button>
+					</template>
+				</el-table-column>
+			</el-table>
+		</el-col>
+	</el-row>
+
+
+	<el-dialog title="添加gitlab项目" :visible.sync="showDialog">
+		<section>
+			<el-form ref="addForm" :model="gitlab_project" :rules="rules" label-width="100px" label-position="left">
+				<el-form-item label="gitlab账号" prop="accountid">
+					<el-select v-model="gitlab_project.accountid" placeholder="请选择gitlab账号" @change="getAccountProjects"  :no-data-text="emptyText">
+						<el-option
+								v-for="item in gitlab_accounts"
+								:label="item.name"
+								:value="item.id"
+						>
+
+						</el-option>
+					</el-select>
+				</el-form-item>
+
+				<el-form-item label="项目名称" prop="proid">
+					<el-select v-model.number="gitlab_project.proid" placeholder="请选择统计项目" @change="getProjectBranchs" :no-data-text="emptyText">
+						<el-option
+								v-for="item in account_projects"
+								:label="item.nameWithNamespace"
+								:value="item.id"
+						>
+
+						</el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="项目分支" prop="branch">
+					<el-select v-model="gitlab_project.branch" placeholder="请选择要统计的分支" :no-data-text="emptyText">
+						<el-option
+								v-for="item in project_branchs"
+								:label="item.name"
+								:value="item.name"
+						>
+
+						</el-option>
+					</el-select>
+				</el-form-item>
+
+				<el-form-item>
+					<el-input v-model="gitlab_project.viewName" placeholder="请输入项目别名"></el-input>
+				</el-form-item>
+
+				<el-form-item>
+					<el-button type="primary" @click="add">提交</el-button>
+					<el-button @click="closeDialog">取消</el-button>
+				</el-form-item>
+
+			</el-form>
+		</section>
+	</el-dialog>
+
+</div>
+
+<script src="js/base.js"></script>
+<script src="js/Vue.js"></script>
+<script src="js/element-ui.js"></script>
+<script src="js/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                gitlab_accounts: [],
+				account_projects: [],
+				project_branchs: [],
+                gitlab_project: {
+                    id: null,
+                    accountid:null,
+                    branch: null,
+                    proid:'',
+                    webUrl:null,
+                    projectNameWithNamespace:null,
+                    viewName:null
+                },
+                rules: {
+                    accountid: [
+                        {required: true, message: '请选择gitlab账号', trigger: 'blur'}
+                    ],
+                    proid:[
+                        {required: true, message: '请选择统计项目'}
+					],
+                    branch: [
+                        {required: true, message: '请选择项目分支', trigger: 'blur'}
+                    ]
+                },
+                projects: [],
+                activeIndex: "2",
+                showDialog: false,
+                emptyText:"暂无数据"
+            }
+        },
+        methods: {
+            getPorjects()
+            {
+                var self = this;
+                axios.get(baseUrl + '/project/')
+                    .then(function (response) {
+                        if (response.data.resultCode == "00") {
+                            self.projects = response.data.data;
+                        } else {
+                            self.$notify.error({
+                                title: '获取项目失败',
+                                message: response.data.data
+                            });
+                        }
+
+                    })
+                    .catch(function (error) {
+                        self.$notify.error({
+                            title: '获取项目失败',
+                            message: error.response.data.data || error.message
+                        });
+                    });
+            },
+            add(){
+                var self = this;
+                console.log(this.$refs.addForm);
+                self.$refs.addForm.validate((valid) => {
+                    if(valid){
+                        axios.post(baseUrl + '/project/', self.gitlab_project)
+                            .then(function (response) {
+                                console.log(response);
+                                if (response.data.resultCode == "00") {
+                                    var message="添加统计项目成功";
+                                    if(self.gitlab_project.id!=null){
+                                        message="修改统计项目成功";
+                                    }
+                                    self.$message.success({
+                                        message: message
+                                    });
+                                    self.showDialog = false;
+                                    self.getPorjects();
+                                } else {
+                                    self.$notify.error({
+                                        title: '添加统计项目失败',
+                                        message: response.data.data
+                                    });
+                                }
+                            })
+                            .catch(function (error) {
+                                console.log("******************error" + error);
+                                self.$notify.error({
+                                    title: '添加统计项目失败',
+                                    message: error.response.data.data || error.message
+                                });
+                                self.$refs.addForm.resetFields();
+                            });
+                    }
+                }
+            )
+                ;
+
+            },
+            showEdit(project){
+                this.showDialog = true;
+                this.gitlab_project.id = project.id;
+                this.gitlab_project.accountid = project.accountid;
+                this.gitlab_project.proid = project.proid;
+                this.gitlab_project.branch = project.branch;
+                this.gitlab_project.viewName=project.viewName;
+                this.getAccountProjects();
+                this.getProjectBranchs();
+            },
+            del(projectId){
+                var self = this;
+                this.$confirm('确认删除？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.delete(baseUrl + "/project/" + projectId).then((response) => {
+                    if(response.data.resultCode == "00"
+            )
+                {
+                    self.$message.success({
+                        message: "删除统计项目成功"
+                    });
+                    self.getPorjects;
+                }
+            else
+                {
+                    self.$notify.error({
+                        title: '删除统计项目失败',
+                        message: response.data.data
+                    });
+                }
+
+            }).
+                catch((error) => {
+                    self.$notify.error({
+                    title: '删除统计项目失败',
+                    message: error.response.data.data || error.message
+                });
+            })
+                ;
+            })
+            },
+            closeDialog(){
+                this.showDialog = false;
+            },
+            openDialog(){
+                this.showDialog = true;
+                this.initProject();
+            },
+            initProject(){
+                this.gitlab_project.id = null;
+                this.gitlab_project.accountid = null;
+                this.gitlab_project.proid = null;
+                this.gitlab_project.branch = null;
+                this.gitlab_project.viewName=null;
+            },
+			getAccounts :function (){
+                var self = this;
+                axios.get(baseUrl + '/account/')
+                    .then(function (response) {
+                        if (response.data.resultCode == "00") {
+                            self.gitlab_accounts = response.data.data;
+                        } else {
+                            self.$notify.error({
+                                title: '获取账号失败',
+                                message: response.data.data
+                            });
+                        }
+
+                    })
+                    .catch(function (error) {
+                        self.$notify.error({
+                            title: '获取账号失败',
+                            message: error.response.data.data || error.message
+                        });
+                    });
 			},
-		    methods: {
-		    }, 
-		    mounted () {
-		    	console.log("init");
-		    }
-		})
-	</script>
+			getAccountProjects:function () {
+                var self = this;
+                axios.get(baseUrl + '/git/'+self.gitlab_project.accountid+'/projects')
+                    .then(function (response) {
+                        if (response.data.resultCode == "00") {
+                            self.account_projects = response.data.data;
+                        } else {
+                            self.$notify.error({
+                                title: '获取gitlab项目失败',
+                                message: response.data.data
+                            });
+                        }
+
+                    })
+                    .catch(function (error) {
+                        self.$notify.error({
+                            title: '获取gitlab项目失败',
+                            message: error.response.data.data || error.message
+                        });
+                    });
+            },
+			getProjectBranchs:function () {
+                var self = this;
+                axios.get(baseUrl + '/git/'+self.gitlab_project.accountid+'/'+self.gitlab_project.proid+'/'+'branchs')
+                    .then(function (response) {
+                        if (response.data.resultCode == "00") {
+                            self.project_branchs = response.data.data;
+                        } else {
+                            self.$notify.error({
+                                title: '获取gitlab项目分支失败',
+                                message: response.data.data
+                            });
+                        }
+
+                    })
+                    .catch(function (error) {
+                        self.$notify.error({
+                            title: '获取gitlab项目分支失败',
+                            message: error.response.data.data || error.message
+                        });
+                    });
+            }
+        },
+        mounted()
+        {
+            this.getPorjects();
+			this.getAccounts();
+        }
+    })
+</script>
+<style>
+	.el-row {
+		margin-bottom: 20px;
+	}
+</style>
 </body>
 </html>
