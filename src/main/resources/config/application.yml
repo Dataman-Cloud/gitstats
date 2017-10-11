@@ -49,6 +49,9 @@ spring:
     chain:
       html-application-cache: true
       
+gitstats:
+  autofill: false
+      
 #hook配置 项目token
 #hook:
 #  secretToken:

@@ -100,4 +100,18 @@ public class ProjectController extends BaseController {
 		}
 		return json;
 	}
+	
+	@RequestMapping(value="/projectBranchStatsPlus/{id}",method=RequestMethod.GET)
+	@ApiOperation(value = "根据时间和用户显示统计数据")
+	public Object showProjectBranchByUserAndDay(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
 }
