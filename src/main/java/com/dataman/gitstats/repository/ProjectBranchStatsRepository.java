@@ -13,7 +13,7 @@ public interface ProjectBranchStatsRepository extends MongoRepository<ProjectBra
 	
 //	public List<ProjectBranchStats> findByProjectid(String projectid);
 
-//	public ProjectBranchStats findByProjectidAndBranch(String projectid,String branch);
+	public ProjectBranchStats findByWeburlAndBranch(String weburl,String branch);
 //
 //	public Long deleteByProjectid(String projectid);
 //
