@@ -30,7 +30,7 @@ public class ProjectBranchStats {
 	int totalRow;
 	int totalAddRow;
 	int totalDelRow;
-	
+	Date createdAt; //项目创建时间
 	Date lastupdate;
 	private String showLastupdate;
 	Date createdate;
@@ -129,4 +129,12 @@ public class ProjectBranchStats {
 	public String getShowCreatedate() {
 		return sdf.format(this.createdate);
 	}
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+	
 }

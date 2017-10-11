@@ -3,26 +3,17 @@ package com.dataman.gitstats.service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-
-import java.util.*;
-
 import java.util.concurrent.Future;
 
-import com.dataman.gitstats.po.MergeRequestEventRecord;
-import com.dataman.gitstats.po.PushEventRecord;
-import com.dataman.gitstats.repository.MergeRequestEventRecordRepository;
-import com.dataman.gitstats.repository.PushEventRecordRepository;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.Pager;
 import org.gitlab4j.api.models.Commit;
-
-import org.gitlab4j.api.models.CommitStats;
 import org.gitlab4j.api.webhook.EventCommit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +22,13 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
 import com.dataman.gitstats.po.CommitStatsPo;
+import com.dataman.gitstats.po.MergeRequestEventRecord;
 import com.dataman.gitstats.po.ProjectBranchStats;
+import com.dataman.gitstats.po.PushEventRecord;
 import com.dataman.gitstats.repository.CommitStatsRepository;
+import com.dataman.gitstats.repository.MergeRequestEventRecordRepository;
 import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
+import com.dataman.gitstats.repository.PushEventRecordRepository;
 import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;

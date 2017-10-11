@@ -19,14 +19,18 @@ import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
+import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
@@ -35,8 +39,11 @@ import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
 import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
+import com.dataman.gitstats.vo.ProjectBranchStatsPlusVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 import com.dataman.gitstats.vo.StatsByUserByDayVo;
+import com.mongodb.AggregationOutput;
+import com.mongodb.DBObject;
 
 @Service
 public class ProjectBranchService {
@@ -55,14 +62,17 @@ public class ProjectBranchService {
 	@Autowired
 	GitlabUtil gitlabUtil;
 
-	 @Autowired
-	 private CommonService commonService;
+	@Autowired
+	private CommonService commonService;
 
 	@Autowired
 	private WebHookService webHookService;
 	
-	
 	SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD");
+	
+	//释放开启日期自动补充
+	@Value("${gitstats.autofill}")
+	private boolean autofill;
 	
 	/**
 	 * @method addProject(添加需要统计的项目)
@@ -94,6 +104,7 @@ public class ProjectBranchService {
 			pbs.setTotalAddRow(0);
 			pbs.setTotalDelRow(0);
 			pbs.setTotalRow(0);
+			pbs.setCreatedAt(project.getCreatedAt());
 			pbs.setCreatedate(cal.getTime());
 			pbs.setLastupdate(cal.getTime());
 			projectBranchStatsRepository.insert(pbs);
@@ -154,19 +165,41 @@ public class ProjectBranchService {
 //		commitStatsRepository.deleteByProid(id);
 //		return SUCCESS;
 //	}
-	
+	/**
+	 * @method showStatsByUser(根据用户查询统计)
+	 * @return ProjectBranchStatsVo
+	 * @author liuqing
+	 * @date 2017年10月11日 下午4:53:27
+	 */
 	public ProjectBranchStatsVo showStatsByUser(String pbsId) throws Exception{
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
 		ProjectBranchStatsVo pbsv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsVo());
 		pbsv.setData(statsByUser(pbs));
 		return pbsv;
 	}
-	
+	/**
+	 * @method showStatsByDay(根据天查询统计)
+	 * @return ProjectBranchStatsVo
+	 * @author liuqing
+	 * @date 2017年10月11日 下午4:53:57
+	 */
 	public ProjectBranchStatsVo showStatsByDay(String pbsId) throws Exception{
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
 		ProjectBranchStatsVo pbsv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsVo());
 		pbsv.setData(statsByDay(pbs));
 		return pbsv;
+	}
+	/**
+	 * @method showStatsByDayAndUser(根据用户和天查询统计)
+	 * @return Object
+	 * @author liuqing
+	 * @date 2017年10月11日 下午4:54:28
+	 */
+	public ProjectBranchStatsPlusVo showStatsByDayAndUser(String pbsId) throws Exception{
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
+		ProjectBranchStatsPlusVo pbspv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsPlusVo());
+		pbspv.setData(statsByUserByDay(pbs));
+		return pbspv;
 	}
 	
 	//	db.getCollection('commitStatsPo').aggregate([
@@ -204,8 +237,10 @@ public class ProjectBranchService {
 		
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();
-		//补充 缺省日期数据  补充 到 当前
-		list =complementDay(list,null);
+		if(autofill){
+			//补充 缺省日期数据  补充 到 当前
+			list =complementDay(list,null);
+		}
 		return list;
 	}
 	
@@ -223,19 +258,19 @@ public class ProjectBranchService {
 		Aggregation agg= Aggregation.newAggregation(
 				Aggregation.match(new Criteria("branchId").is(pbs.getId())),
 				Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow")
-					.and("$removeRow").as("removeRow"),
+				.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
 				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
 					.count().as("commit"),
-				Aggregation.project().and("_id.authorName").as("authorName"),
-				Aggregation.group(Fields.fields("authorName")).sum("addRow").as("dayinfo.addRow")
-					.sum("dayinfo.removeRow").as("removeRow").sum("commit").as("dayinfo.commit")
+				Aggregation.project().and("_id.authorName").as("authorName").and("dayinfo")
+					.nested(Aggregation.bind("_id","_id.day").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
+				Aggregation.group(Fields.fields("authorName")).sum("dayinfo.addrow").as("addrow")
+					.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit")
 					.push("dayinfo").as("days"),
-				Aggregation.sort(Direction.ASC, "_id"),
+				Aggregation.sort(Direction.DESC, "addrow"),
 				Aggregation.limit(8l)
 			);
 		System.out.println(agg.toString());
-			
-		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, StatsByUserByDayVo.class, StatsByUserByDayVo.class);
+		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
 		list =ret.getMappedResults();
 		return list;
 	}
