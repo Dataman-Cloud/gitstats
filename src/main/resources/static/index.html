@@ -44,7 +44,7 @@ a {
 		<el-row> <el-col :span="24"> 
 		<el-carousel :height="appheight"> 
 			<el-carousel-item v-for="pro in projects">
-				<h1>{{ pro.projectname }}:{{ pro.branch }}</h1>
+				<h1>{{ pro.projectNameWithNamespace }}:{{ pro.branch }}</h1>
 				<projectstats :pbsid="pro.id">
 					
 				</projectstats>
@@ -140,8 +140,7 @@ a {
 					var myChart = echarts.init(document.getElementById('branchStats_RAGE_'+this.pbsid));
 					var option = {
 		        		    tooltip:{trigger: 'item',formatter: "{a} <br/>{b} : {c} ({d}%)"},
-		        		    legend:{orient: 'vertical', left: 'left', data: users },
-		        		    series:{name:'代码量',type: 'pie',label:{normal:{show: false, position: 'center'},},data:seriesdata}
+		        		    series:{name:'代码量',type: 'pie',data:seriesdata}
 		        		}
 					myChart.setOption(option);
 				},
@@ -172,13 +171,13 @@ a {
 		    methods: {
 		    	getProject(){
 		    		var self=this;
-		    		axios.get('/project/branchs').then(function (response) {
+		    		axios.get('/project/').then(function (response) {
 		    			self.projects= response.data.data;
 		    			// console.log(self.projects);
 		    		}).catch(function (error) {
 		    			console.log(error);
 		        		self.$notify.error({
-		        	          title: '获取projectbranchs异常',
+		        	          title: '获取project异常',
 		        	          message: error
 		        	    });
 		    		});
