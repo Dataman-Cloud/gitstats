@@ -1,8 +1,8 @@
 package com.dataman.gitstats.service;
 
-import org.springframework.stereotype.Service;
-
 import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Service;
 
 /**
  * Created by biancl on 2017-09-22.
