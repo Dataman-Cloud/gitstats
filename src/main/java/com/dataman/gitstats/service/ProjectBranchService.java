@@ -122,8 +122,8 @@ public class ProjectBranchService {
 		return projectBranchStatsRepository.findOne(id);
 	}
 
-	public ProjectBranchStats findProjectBranchStatsByParams(String weburl,Integer proid,String branch){
-		return projectBranchStatsRepository.findOne(weburl+"_"+proid+"_"+branch);
+	public ProjectBranchStats findProjectBranchStatsByParams(String weburl,String branch){
+		return projectBranchStatsRepository.findByWeburlAndBranch(weburl,branch);
 	}
 
 	public List<ProjectBranchStats> getAllProjectBranchStats(){

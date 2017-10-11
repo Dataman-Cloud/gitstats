@@ -19,7 +19,7 @@ public class ProjectBranchStats {
 	private static SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	//将ProjectStats和BranchStats合并为一张表
 	@Id
-	String id;		//weburl+proid+branch确保分支唯一，不重复添加
+	String id;		//自动生成
 	String accountid;
 	String branch;
 	String projectNameWithNamespace;//项目名称+命名空间  只有项目名称可能会重复
