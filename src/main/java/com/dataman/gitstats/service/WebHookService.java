@@ -104,7 +104,7 @@ public class WebHookService {
     public void handlePushEvent(PushEvent event) throws Exception {
         if (recordRepository.findOne(event.getBefore() + event.getAfter()) == null) {
             PushEventRecord record = this.addPushEventRecord(event);
-                ProjectBranchStats branchStats = projectBranchService.findProjectBranchStatsByParams(event.getProject().getWebUrl(),event.getProjectId(),event.getBranch());
+                ProjectBranchStats branchStats = projectBranchService.findProjectBranchStatsByParams(event.getProject().getWebUrl(),event.getBranch());
                 if (branchStats != null) {
                     record.setStatus(record.HANDLING);
                     asyncTask.saveCommitStatsFromPushEventCommitsList(record, branchStats, record.getCommits());
@@ -120,7 +120,7 @@ public class WebHookService {
 
             MergeRequestEventRecord record = this.addMergeRequestEventRecord(event);
 //            ProjectStats projectStats = projectBranchService.findProjectStatsByIdAndUrl(event.getObjectAttributes().getProjectId(), event.getObjectAttributes().getUrl());
-                ProjectBranchStats branchStats = projectBranchService.findProjectBranchStatsByParams(event.getObjectAttributes().getUrl(),event.getObjectAttributes().getProjectId(), event.getObjectAttributes().getTargetBranch());
+                ProjectBranchStats branchStats = projectBranchService.findProjectBranchStatsByParams(event.getObjectAttributes().getUrl(), event.getObjectAttributes().getTargetBranch());
                 if (branchStats != null) {
                     record.setStatus(record.HANDLING);
                     List<Commit> commits = getMergetRequestCommits(branchStats, event);
