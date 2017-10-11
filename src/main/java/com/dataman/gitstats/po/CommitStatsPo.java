@@ -24,16 +24,15 @@ public class CommitStatsPo extends Commit{
 	int addRow; //添加行数
 	int removeRow; //删除行数
 	String projectName;
-	String proid;
-	String branch;
+	String branchId;
 	Date crateDate;
 
 	public String get_id() {
-		return this._id;
+		return _id;
 	}
 
-	public void set_id(String _id) {
-		this._id=_id;
+	public void set_id() {
+		this._id=branchId+"_"+getId();
 	}
 
 	public int getAddRow() {
@@ -60,20 +59,12 @@ public class CommitStatsPo extends Commit{
 		this.projectName = projectName;
 	}
 
-	public String getProid() {
-		return proid;
+	public String getBranchId() {
+		return branchId;
 	}
 
-	public void setProid(String proid) {
-		this.proid = proid;
-	}
-
-	public String getBranch() {
-		return branch;
-	}
-
-	public void setBranch(String branch) {
-		this.branch = branch;
+	public void setBranchId(String branchId) {
+		this.branchId = branchId;
 	}
 
 	public Date getCrateDate() {
@@ -82,9 +73,5 @@ public class CommitStatsPo extends Commit{
 
 	public void setCrateDate(Date crateDate) {
 		this.crateDate = crateDate;
-	}
-	
-	public CommitStatsPo(){
-		this._id=Commnt.createUUID();
 	}
 }

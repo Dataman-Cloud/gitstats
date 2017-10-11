@@ -1,5 +1,6 @@
 package com.dataman.gitstats.web;
 
+import org.gitlab4j.api.models.Branch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,8 @@ import com.dataman.gitstats.util.GitlabUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
+import java.util.List;
 
 @Api(value = "gitlab API")
 @RestController
@@ -39,7 +42,13 @@ public class GitLabController extends BaseController{
 			@ApiParam(required = true, name = "pid", value = "项目id") @PathVariable int pid){
 		json.clear();
 		try {
-			setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getRepositoryApi().getBranches(pid));
+			List<Branch> branchList=gitlabUtil.getGitLabApi(aid).getRepositoryApi().getBranches(pid);
+//			if(branchList.size()==0){
+//				Branch branch=new Branch();
+//				branch.setName("master");
+//				branchList.add(branch);
+//			}
+			setJson(SUCCESS_CODE,branchList);
 		} catch (Exception e) {
 			e.printStackTrace();
 			setJson(FAIL_CODE, e.getMessage());
