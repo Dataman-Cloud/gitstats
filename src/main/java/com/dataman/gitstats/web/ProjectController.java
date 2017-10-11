@@ -3,7 +3,6 @@ package com.dataman.gitstats.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
-import com.dataman.gitstats.po.ProjectBranchStats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +30,13 @@ public class ProjectController extends BaseController {
 	@ApiOperation(value = "获取所有统计项目")
 	public Object getAll(){
 		json.clear();
+		try {
+			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
 		setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
 		return json;
 	}
@@ -52,7 +58,6 @@ public class ProjectController extends BaseController {
 			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
 			return json;
 		}
-
 		try {
 			if(param.getId()==null){
 				setJson(SUCCESS_CODE, projectBranchService.addProject(param,request));

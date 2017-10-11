@@ -22,7 +22,7 @@ public class CommitController extends BaseController {
 	
 	@RequestMapping(value="/{pbid}",method=RequestMethod.GET)
 	@ApiOperation(value = "显示统计数据")
-	public Object showProjecBranchCommits(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+	public Object showProjecBranchCommits(@ApiParam(required = true, name = "pbid", value = "分支id") @PathVariable  String pbid){
 		json.clear();
 		
 		return json;
