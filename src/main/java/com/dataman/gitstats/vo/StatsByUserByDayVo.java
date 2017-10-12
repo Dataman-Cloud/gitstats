@@ -8,7 +8,7 @@ public class StatsByUserByDayVo {
 	int addrow;
 	int removerow;
 	double commit;
-	List<CommitStatsVo> days;
+	List<CommitStatsVo> data;
 	public String get_id() {
 		return _id;
 	}
@@ -33,12 +33,13 @@ public class StatsByUserByDayVo {
 	public void setCommit(double commit) {
 		this.commit = commit;
 	}
-	public List<CommitStatsVo> getDays() {
-		return days;
+	public List<CommitStatsVo> getData() {
+		return data;
 	}
-	public void setDays(List<CommitStatsVo> days) {
-		this.days = days;
+	public void setData(List<CommitStatsVo> data) {
+		this.data = data;
 	}
+	
 	
 	
 }

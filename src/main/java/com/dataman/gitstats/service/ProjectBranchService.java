@@ -25,6 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -183,25 +184,37 @@ public class ProjectBranchService {
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:53:57
 	 */
-	public ProjectBranchStatsVo showStatsByDay(String pbsId) throws Exception{
+	public ProjectBranchStatsVo showStatsByDay(String pbsId,String format,MatchOperation match) throws Exception{
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
 		ProjectBranchStatsVo pbsv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsVo());
-		pbsv.setData(statsByDay(pbs));
+		pbsv.setData(statsByDay(pbs,format,match));
 		return pbsv;
 	}
+	/**
+	 * @method showStatsByUserAndDay(根据用户和天查询统计)
+	 * @return Object
+	 * @author liuqing
+	 * @date 2017年10月11日 下午4:54:28
+	 */
+	public ProjectBranchStatsPlusVo showStatsByUserAndDay(String pbsId,String format,MatchOperation match) throws Exception{
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
+		ProjectBranchStatsPlusVo pbspv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsPlusVo());
+		pbspv.setData(statsByUserByDay(pbs,format,match));
+		return pbspv;
+	}
+	
 	/**
 	 * @method showStatsByDayAndUser(根据用户和天查询统计)
 	 * @return Object
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:54:28
 	 */
-	public ProjectBranchStatsPlusVo showStatsByDayAndUser(String pbsId) throws Exception{
+	public ProjectBranchStatsPlusVo showStatsByDayAndUser(String pbsId,String format,MatchOperation match) throws Exception{
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(pbsId);
 		ProjectBranchStatsPlusVo pbspv=ClassUitl.copyProperties(pbs, new ProjectBranchStatsPlusVo());
-		pbspv.setData(statsByUserByDay(pbs));
+		pbspv.setData(statsByDayByUser(pbs,format,match));
 		return pbspv;
 	}
-	
 	//	db.getCollection('commitStatsPo').aggregate([
 	//	 {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}},
 	//	 {$group:{_id:"$authorName",addrow:{$sum:"$addRow"},removerow:{$sum:"$removeRow"},commit:{$sum:1}}}
@@ -225,11 +238,11 @@ public class ProjectBranchService {
 //	    ,{$group   : { _id : "$day",  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
 //	    ,{$sort :{_id : -1}}
 //	])
-	public List<CommitStatsVo> statsByDay(ProjectBranchStats pbs){
+	public List<CommitStatsVo> statsByDay(ProjectBranchStats pbs,String dataformat,MatchOperation match){
 		List<CommitStatsVo> list=null;
 		Aggregation agg= Aggregation.newAggregation(
-			Aggregation.match(new Criteria("branchId").is(pbs.getId())),
-			Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow").and("$removeRow").as("removeRow"),
+			match,
+			Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow").and("$removeRow").as("removeRow"),
 			Aggregation.group(Fields.fields("day")).sum("addRow").as("addrow").sum("removeRow").as("removerow").count().as("commit"),
 			Aggregation.sort(Direction.ASC, "_id")
 		);
@@ -253,19 +266,20 @@ public class ProjectBranchService {
 //	,{$sort : { addrow : -1 }}
 //	,{ $limit : 8 }
 //	])
-	public List<StatsByUserByDayVo> statsByUserByDay(ProjectBranchStats pbs){
+	public List<StatsByUserByDayVo> statsByUserByDay(ProjectBranchStats pbs,String dataformat,MatchOperation match){
 		List<StatsByUserByDayVo> list=null;
 		Aggregation agg= Aggregation.newAggregation(
-				Aggregation.match(new Criteria("branchId").is(pbs.getId())),
-				Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow")
+				match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
 				.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
+				Aggregation.sort(Direction.DESC, "day"),
 				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
 					.count().as("commit"),
 				Aggregation.project().and("_id.authorName").as("authorName").and("dayinfo")
 					.nested(Aggregation.bind("_id","_id.day").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
 				Aggregation.group(Fields.fields("authorName")).sum("dayinfo.addrow").as("addrow")
 					.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit")
-					.push("dayinfo").as("days"),
+					.push("dayinfo").as("data"),
 				Aggregation.sort(Direction.DESC, "addrow"),
 				Aggregation.limit(8l)
 			);
@@ -274,6 +288,68 @@ public class ProjectBranchService {
 		list =ret.getMappedResults();
 		return list;
 	}
+	
+	
+//	db.getCollection('commitStatsPo').aggregate([  
+//	{$match:{"branchId" : "59dad6c94cd6f7d2103db236"}}
+//	,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 ,authorName:1}}
+//	,{$group   : { _id : {authorName: "$authorName",day : "$day"},  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
+//	,{$project : { day : '$_id.day', usersinfo : {user : '$_id.authorName', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
+//	,{$group:{_id:"$day", users:{$push:"$usersinfo"}, addrow: {$sum: "$usersinfo.addRow"},removeRow: {$sum: "$usersinfo.removeRow"},commit: {$sum: "$usersinfo.commit"}}}
+//	,{$sort : { _id : -1 }}
+//	])
+	public List<StatsByUserByDayVo> statsByDayByUser(ProjectBranchStats pbs,String dataformat,MatchOperation match){
+		List<StatsByUserByDayVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+				match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
+				.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
+				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
+					.count().as("commit"),
+				Aggregation.sort(Direction.DESC, "addRow"),
+				Aggregation.project().and("_id.day").as("day").and("usersinfo")
+					.nested(Aggregation.bind("_id","_id.authorName").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
+				Aggregation.group(Fields.fields("day")).sum("usersinfo.addrow").as("addrow")
+					.sum("usersinfo.removerow").as("removerow").sum("usersinfo.commit").as("commit")
+					.push("usersinfo").as("data"),
+				Aggregation.sort(Direction.ASC, "_id")
+			);
+		System.out.println(agg.toString());
+		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
+		list =ret.getMappedResults();
+		return list;
+	}
+//	db.getCollection('commitStatsPo').aggregate([  
+//	{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 ,branchId:1}}
+//	,{$group   : { _id : {branchId: "$branchId",day : "$day"},  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
+//	,{$sort : { addRow : -1 }}
+//	     ,{$project : { day : '$_id.day', proinfo : {branchId : '$_id.branchId', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
+//	     ,{$group:{_id:"$day", pros:{$push:"$proinfo"}, addrow: {$sum: "$proinfo.addRow"},removeRow: {$sum: "$proinfo.removeRow"},commit: {$sum: "$proinfo.commit"}}}
+//	,{$sort : { _id : -1 }}
+//	])
+	public List<StatsByUserByDayVo> statsByDay(String dataformat,MatchOperation match){
+		List<StatsByUserByDayVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+				match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
+				.and("$removeRow").as("removeRow").and("$branchId").as("branchId"),
+				Aggregation.group(Fields.fields("branchId","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
+					.count().as("commit"),
+				Aggregation.sort(Direction.DESC, "addRow"),
+				Aggregation.project().and("_id.day").as("day").and("proinfo")
+					.nested(Aggregation.bind("_id","_id.branchId").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
+				Aggregation.group(Fields.fields("day")).sum("proinfo.addrow").as("addrow")
+					.sum("proinfo.removerow").as("removerow").sum("proinfo.commit").as("commit")
+					.push("proinfo").as("data"),
+				Aggregation.sort(Direction.ASC, "_id")
+		);
+		System.out.println(agg.toString());
+		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
+		list =ret.getMappedResults();
+		return list;
+	}
+	
+	
 	
 	/**
 	 * @method complementDay(缺省日期数据)

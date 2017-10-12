@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.service.ProjectBranchService;
+import com.dataman.gitstats.util.MongoDateUtil;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -73,7 +75,7 @@ public class ProjectController extends BaseController {
 		return json;
 	}
 
-	@RequestMapping(value="/projectBranchStats/{id}/byuser",method=RequestMethod.GET)
+	@RequestMapping(value="/projectBranchStats/{id}/byUser",method=RequestMethod.GET)
 	@ApiOperation(value = "根据User显示统计数据")
 	public Object showProjectBranchStatsByUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
 		json.clear();
@@ -87,12 +89,15 @@ public class ProjectController extends BaseController {
 		return json;
 	}
 	
-	@RequestMapping(value="/projectBranchStats/{id}",method=RequestMethod.GET)
+	@RequestMapping(value="/projectBranchStats/{id}/byDay",method=RequestMethod.GET)
 	@ApiOperation(value = "根据时间显示统计数据")
-	public Object showProjectBranchStats(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+	public Object showProjectBranchStats(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
+			@RequestParam(required = false)  @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
+			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
 		json.clear();
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByDay(id));
+			setJson(SUCCESS_CODE, projectBranchService.showStatsByDay(id,MongoDateUtil.getFormat(dateformat)
+					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -101,12 +106,47 @@ public class ProjectController extends BaseController {
 		return json;
 	}
 	
-	@RequestMapping(value="/projectBranchStatsPlus/{id}",method=RequestMethod.GET)
+	@RequestMapping(value="/projectBranchStats/{id}/byUserAndDay",method=RequestMethod.GET)
 	@ApiOperation(value = "根据时间和用户显示统计数据")
-	public Object showProjectBranchByUserAndDay(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+	public Object showProjectBranchByUserAndDay(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
+			@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
+			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
 		json.clear();
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id));
+			setJson(SUCCESS_CODE, projectBranchService.showStatsByUserAndDay(id,MongoDateUtil.getFormat(dateformat)
+					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
+	@RequestMapping(value="/projectBranchStats/{id}/byDayAndUser",method=RequestMethod.GET)
+	@ApiOperation(value = "根据时间和用户显示统计数据")
+	public Object showProjectBranchByDayAndUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
+			@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
+			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id,MongoDateUtil.getFormat(dateformat)
+					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
+	@RequestMapping(value="/projectBranchStats/byDay",method=RequestMethod.GET)
+	@ApiOperation(value = "根据时间显示统计所有项目数据")
+	public Object showProjectBranchStats(@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
+			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectBranchService.statsByDay(MongoDateUtil.getFormat(dateformat),MongoDateUtil.getOperation(null, dateformat, lastDate)));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

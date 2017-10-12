@@ -25,7 +25,7 @@ public class CodeTest {
 		
 		Aggregation agg= Aggregation.newAggregation(
 				Aggregation.match(new Criteria("branchId").is("888")),
-				Aggregation.project().and("createdAt").substring(0, 10).as("day").and("$addRow").as("addRow")
+				Aggregation.project().and("createdAt").dateAsFormattedString("%Y-%U").as("day").and("$addRow").as("addRow")
 					.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
 				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
 					.count().as("commit"),

@@ -84,7 +84,7 @@ a {
 			methods:{
 				getStatsData(){
 					var self=this;
-					axios.get('/project/projectBranchStats/'+self.pbsid).then(function (response) {
+					axios.get('/project/projectBranchStats/'+self.pbsid+'/byDay').then(function (response) {
 		    			self.statsData= response.data.data.data;
 		    			self.showStatsData(self.statsData);
 		    		}).catch(function (error) {
@@ -97,7 +97,7 @@ a {
 				},
 				getStatsByUserData(){
 					var self=this;
-					axios.get('/project/projectBranchStats/'+self.pbsid+"/byuser").then(function (response) {
+					axios.get('/project/projectBranchStats/'+self.pbsid+"/byUser").then(function (response) {
 		    			self.statsByUserData= response.data.data.data;
 		    			self.showStatsDataByUser(self.statsByUserData)
 		    			// console.log(self.statsByUserData);
@@ -194,7 +194,6 @@ a {
 			    		winHeight = document.documentElement.clientHeight; 
 			    	this.appheight = winHeight+'px';
 		    	},
-		    	
 		    }, 
 		    mounted () {
 			   console.log("init");
