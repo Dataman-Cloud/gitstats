@@ -5,6 +5,7 @@ public class CommitStatsVo {
 	String _id;
 	int addrow;
 	int removerow;
+	int totalrow;
 	double commit;
 	
 	public String get_id() {
