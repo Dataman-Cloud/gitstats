@@ -64,7 +64,7 @@ a {
 		<el-row> <el-col :span="24"> 
 		<el-carousel :height="appheight"> 
 			<el-carousel-item v-for="pro in projects">
-				<h1>{{ pro.projectNameWithNamespace }}:{{ pro.branch }}</h1>
+				<h1>{{ pro.viewName }}</h1>
 				<projectstats :pbsid="pro.id">
 					
 				</projectstats>
