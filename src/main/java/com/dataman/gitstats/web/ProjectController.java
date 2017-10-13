@@ -3,13 +3,10 @@ package com.dataman.gitstats.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import com.dataman.gitstats.annotation.AuthRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.service.ProjectBranchService;
@@ -40,19 +37,23 @@ public class ProjectController extends BaseController {
 		setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
 		return json;
 	}
-
+	@AuthRequired
 	@RequestMapping(value = "/{branchId}",method = RequestMethod.DELETE)
 	@ApiOperation(value = "删除统计项目")
-	public Object delete(@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId){
+	public Object delete(
+			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId){
 		json.clear();
 		projectBranchService.deleteProjectBranchStats(branchId);
 		setJson(SUCCESS_CODE);
 		return json;
 	}
-
+	@AuthRequired
 	@RequestMapping(value="/",method=RequestMethod.POST)
 	@ApiOperation(value = "添加需要统计的项目")
-	public Object add(@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request){
+	public Object add(
+			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request){
 		json.clear();
 		if(bingingresult.hasErrors()){
 			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
@@ -86,7 +87,7 @@ public class ProjectController extends BaseController {
 		}
 		return json;
 	}
-	
+
 	@RequestMapping(value="/projectBranchStats/{id}",method=RequestMethod.GET)
 	@ApiOperation(value = "根据时间显示统计数据")
 	public Object showProjectBranchStats(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){

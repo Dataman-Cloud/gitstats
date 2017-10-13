@@ -13,11 +13,11 @@
 server:
   port: 8081
 
-security:
-  ignored: /webHook/*
-  user:
-    name: admin
-    password: 123456
+#security:
+#  ignored: /webHook/*
+#  user:
+#    name: admin
+#    password: 123456
 
 logging:
   config: classpath:config/logback.xml

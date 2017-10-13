@@ -21,6 +21,8 @@ public class User {
     private int status;
     private String creator;
     private Date createAt;
+    private String token;
+    private Long expire;
 
     public String getId() {
         return id;
@@ -84,5 +86,21 @@ public class User {
 
     public void setCreateAt(Date createAt) {
         this.createAt = createAt;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public Long getExpire() {
+        return expire;
+    }
+
+    public void setExpire(Long expire) {
+        this.expire = expire;
     }
 }
