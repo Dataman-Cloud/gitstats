@@ -133,6 +133,7 @@ a {
 					totalRow:0,
 					totalAddRow:0,
 					totalDelRow:0,
+					interval:null,
 				}
 			},
 			methods:{
@@ -157,6 +158,7 @@ a {
 					axios.get('/project/projectBranchStats/'+self.pbsid+"/byUser").then(function (response) {
 		    			// self.statsByUserData = response.data.data.data;
 		    			// 获取前 10 的数据
+		    			self.statsByUserData = [];
 		    			for(var i=0;i<10;i++){
 		    				var info= response.data.data.data[i];
 		    				if(info){
@@ -165,7 +167,7 @@ a {
 		    					self.statsByUserData.push({_id:null,addrow:null,removerow:null,commit:null});
 		    				}
 		    			}
-		    			console.log( self.statsByUserData);
+		    			//console.log( self.statsByUserData);
 		    			// self.showStatsDataByUser(self.statsByUserData)
 		    			// console.log(self.statsByUserData);
 		    		}).catch(function (error) {
@@ -198,7 +200,7 @@ a {
 					myChart.setOption(option);
 				},
 				showStatsDataByUser(data){
-					console.log(data);
+					// console.log(data);
 					var users=[],seriesdata=[];
 					for(var i in data){
 						users.push(data[i]._id);
@@ -217,12 +219,19 @@ a {
 				getRageId(id){
 					return "branchStats_RAGE_"+id;
 				},
+				init(){
+					this.getStatsData();
+					this.getStatsByUserData();
+				},
 			},
 			mounted(){
-				console.log("init");
-				this.getStatsData();
-				this.getStatsByUserData();
+				console.log(this.pbsid + "init" + new Date());
 				// console.log(this.pbsid);
+				this.init();
+				this.interval = setInterval(() => this.init(), 5000);
+			},
+		    beforeDestroy: function () {
+			    clearInterval(this.interval);
 			}
 		});
 	
@@ -233,13 +242,15 @@ a {
 					activeIndex: '1',
 					projects: [],
 					appheight: '600px',
+					interval: null,
 				}
 			},
 		    methods: {
 		    	getProject(){
 		    		var self=this;
 		    		axios.get('/project/').then(function (response) {
-		    			self.projects= response.data.data;
+		    			self.projects = [];
+		    			self.projects = response.data.data;
 		    			// console.log(self.projects);
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -266,7 +277,10 @@ a {
 			   console.log("init");
 			   this.getWinheight();
 			   this.getProject();
-			   
+			   this.interval = setInterval(() => this.getProject(), 5000);
+		    },
+		    beforeDestroy: function () {
+		       clearInterval(this.interval);
 		    }
 		})
 	</script>
