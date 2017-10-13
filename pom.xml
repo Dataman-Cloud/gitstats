@@ -91,6 +91,48 @@
     </dependencies>
 
 
-
+	<!-- Package as an executable jar -->
+	<build>
+		<finalName>gitstats</finalName>
+		<defaultGoal>spring-boot:run</defaultGoal>
+		<plugins>
+			
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>${start-class}</mainClass>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptors>
+						<descriptor>${basedir}/src/main/assembly/config/assembly.xml</descriptor>
+					</descriptors>
+					<encoding>${project.build.encoding}</encoding>
+					<appendAssemblyId>false</appendAssemblyId>
+					<finalName>${project.artifactId}-${project.version}-${maven.build.timestamp}</finalName>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
