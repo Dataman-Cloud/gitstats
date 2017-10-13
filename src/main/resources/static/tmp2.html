@@ -22,7 +22,7 @@ a {
 }
 
 .el-carousel__item h1 {
-	padding-left: 70px;
+	text-align: center;
 }
 
 .el-carousel__item:nth-child(2n) {
@@ -35,26 +35,6 @@ a {
 
 .branchStats{
 	
-}
-.branchStats h3 {
-	margin: 0px 0px 18px;
-}
-.branchStats .total {
-	padding-left:70px;
-}
-
-.branchStats .total dl{
-	float: left;
-}
-.branchStats .total dl dt{
-	display: inline-block;
-}
-.branchStats .total dl dd{
-	display: inline-block;
-    -webkit-margin-start: 0px;
-    margin-left: 15px;
-    margin-right: 15px;
-    font-size: 30px;
 }
 </style>
 </head>
@@ -82,38 +62,8 @@ a {
 	<script type="text/x-template" id="branchStats-template">
   		<div class='branchStats'>
 			<el-row :gutter="20">
-  				<el-col :span="14">
-					<div :id="getAllId(pbsid)" style="width:100%;height:400px;"></div>
-					<div class="total">
-						<h3>总计</h3>
-						<div>
-							<dl>
-								<dt>总代码量</dt>
-								<dd>{{totalRow}}</dd>
-							</dl>
-							<dl>
-								<dt>总代添加量</dt>
-								<dd>{{totalAddRow}}</dd>
-							</dl>
-							<dl>
-								<dt>总代删除量</dt>
-								<dd>{{totalDelRow}}</dd>
-							</dl>
-						</div>
-					</div>
-				</el-col>
-  				<el-col :span="10">
-					<div style="padding:0px 20px">
-						<h3>代码累计提交</h3>
-						<el-table :data="statsByUserData" style="width: 100%">
-							<el-table-column type="index" label="排名" width="70"></el-table-column>
-      						<el-table-column prop="_id" min-width="140" label="名称" ></el-table-column>
-							<el-table-column prop="addrow" label="提交行数"></el-table-column>
-							<el-table-column prop="removerow" label="删除行数" ></el-table-column>
-							<el-table-column prop="commit" label="提价次数" ></el-table-column>
-    					</el-table>
-					</div>
-				</el-col>
+  				<el-col :span="15"><div :id="getAllId(pbsid)" style="width:100%;height:300px;">branchStats_ALL</div></el-col>
+  				<el-col :span="9"><div :id="getRageId(pbsid)" style="width:100%;height:300px;">branchStats_RAGE</div></el-col>
 			</el-row>
 			
 		</div>
@@ -130,10 +80,6 @@ a {
 				return {
 					statsData:[],
 					statsByUserData:[],
-					totalRow:0,
-					totalAddRow:0,
-					totalDelRow:0,
-					interval:null,
 				}
 			},
 			methods:{
@@ -141,9 +87,6 @@ a {
 					var self=this;
 					axios.get('/project/projectBranchStats/'+self.pbsid+'/byDay').then(function (response) {
 		    			self.statsData= response.data.data.data;
-		    			self.totalRow = response.data.data.totalRow;
-		    			self.totalAddRow = response.data.data.totalAddRow;
-		    			self.totalDelRow = response.data.data.totalDelRow;
 		    			self.showStatsData(self.statsData);
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -156,19 +99,8 @@ a {
 				getStatsByUserData(){
 					var self=this;
 					axios.get('/project/projectBranchStats/'+self.pbsid+"/byUser").then(function (response) {
-		    			// self.statsByUserData = response.data.data.data;
-		    			// 获取前 10 的数据
-		    			self.statsByUserData = [];
-		    			for(var i=0;i<10;i++){
-		    				var info= response.data.data.data[i];
-		    				if(info){
-		    					self.statsByUserData.push(info);
-		    				}else{
-		    					self.statsByUserData.push({_id:null,addrow:null,removerow:null,commit:null});
-		    				}
-		    			}
-		    			//console.log( self.statsByUserData);
-		    			// self.showStatsDataByUser(self.statsByUserData)
+		    			self.statsByUserData= response.data.data.data;
+		    			self.showStatsDataByUser(self.statsByUserData)
 		    			// console.log(self.statsByUserData);
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -189,9 +121,9 @@ a {
 					}
 					var myChart = echarts.init(document.getElementById('branchStats_ALL_'+this.pbsid));
 					var option = {
-				            title: { text: '每日代码提交量',left:70 },
+				            // title: { text: '总统计' },
 				            // tooltip: {},
-				            legend: { data:['添加行数','删除行数'], right: 60},
+				            legend: { data:['添加行数','删除行数'] },
 				            xAxis: { data: days },
 				            yAxis: {},
 				            series: [{ name: '添加行数', type: 'line', data: addrows }
@@ -200,7 +132,7 @@ a {
 					myChart.setOption(option);
 				},
 				showStatsDataByUser(data){
-					// console.log(data);
+					console.log(data);
 					var users=[],seriesdata=[];
 					for(var i in data){
 						users.push(data[i]._id);
@@ -219,19 +151,12 @@ a {
 				getRageId(id){
 					return "branchStats_RAGE_"+id;
 				},
-				init(){
-					this.getStatsData();
-					this.getStatsByUserData();
-				},
 			},
 			mounted(){
-				console.log(this.pbsid + "init" + new Date());
+				console.log("init");
+				this.getStatsData();
+				this.getStatsByUserData();
 				// console.log(this.pbsid);
-				this.init();
-				this.interval = setInterval(() => this.init(), 5000);
-			},
-		    beforeDestroy: function () {
-			    clearInterval(this.interval);
 			}
 		});
 	
@@ -242,15 +167,13 @@ a {
 					activeIndex: '1',
 					projects: [],
 					appheight: '600px',
-					interval: null,
 				}
 			},
 		    methods: {
 		    	getProject(){
 		    		var self=this;
 		    		axios.get('/project/').then(function (response) {
-		    			self.projects = [];
-		    			self.projects = response.data.data;
+		    			self.projects= response.data.data;
 		    			// console.log(self.projects);
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -277,10 +200,7 @@ a {
 			   console.log("init");
 			   this.getWinheight();
 			   this.getProject();
-			   this.interval = setInterval(() => this.getProject(), 5000);
-		    },
-		    beforeDestroy: function () {
-		       clearInterval(this.interval);
+			   
 		    }
 		})
 	</script>

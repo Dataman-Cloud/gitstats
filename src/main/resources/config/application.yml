@@ -51,6 +51,7 @@ spring:
       
 gitstats:
   autofill: false
+  
       
 #hook配置 项目token
 #hook:
