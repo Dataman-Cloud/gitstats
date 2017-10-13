@@ -6,20 +6,20 @@ git代码统计面板
 
 ## 操作说明
 > maven 打包后
-> 解压 zip文件 进入 bin目录 (需要 jdk1.8的环境)
+  解压 zip文件 进入 bin目录 (需要 jdk1.8的环境)
 
 ### 直接运行
 1.start.sh
 
 ### docker 运行的
 > 1.先执行 bulid.sh 构建镜像
-> 2.执行 dockerRun.sh 运行镜像
+  2.执行 dockerRun.sh 运行镜像
 
 ## 注意
 
 ### 访问路径 
 > 主页  域名:端口
-> api页面 域名:端口/swagger/index.html
+  api页面 域名:端口/swagger/index.html
 
 ### 指定端口 
 java -jar gitstats.tar --server.port=8888
