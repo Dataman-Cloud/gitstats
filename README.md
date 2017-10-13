@@ -18,6 +18,7 @@ git代码统计面板
 
 ### 访问路径 
  * 主页  域名:端口
+ * 登录页面 域名:端口/admin.html
  * 管理页面 域名:端口/account.html
  * api页面 域名:端口/swagger/index.html
 
