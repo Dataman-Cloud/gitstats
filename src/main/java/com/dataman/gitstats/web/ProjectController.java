@@ -39,7 +39,6 @@ public class ProjectController extends BaseController {
 			e.printStackTrace();
 			setJson(FAIL_CODE, e.getMessage());
 		}
-		setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
 		return json;
 	}
 
