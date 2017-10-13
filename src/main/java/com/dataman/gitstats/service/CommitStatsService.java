@@ -34,7 +34,15 @@ public class CommitStatsService {
 	MongoTemplate mongoTemplate;
 
 
+	/**
+	 * @method: getStatsByBranchAndTime
+	 * @author biancl
+	 * @date 2017-10-11 17:23
+	 * @param  branchId, startDate, endDate, dateUnit
+	 * @return java.util.List<java.lang.Object>
+	 */
 	public List<Object> getStatsByBranchAndTime(String branchId,Date startDate,Date endDate,String dateUnit){
+
 		switch (dateUnit){
 			case ("year"):
 				return getYearStatsByBranchAndTime(branchId,startDate,endDate);
@@ -53,12 +61,13 @@ public class CommitStatsService {
 		Aggregation agg=Aggregation.newAggregation(
 				Aggregation.match(new Criteria("branchId").is(branchId)
 						.andOperator(new Criteria("createdAt").gt(startDate).lt(endDate))),
-				Aggregation.project("addRow","removeRow").and("createdAt").substring(0, 4).as("day"),
-				Aggregation.group(Fields.fields("day")).sum("addRow").as("totalAddRow").sum("removeRow").as("totalRemoveRow").count().as("totalCommit"),
+				Aggregation.project("addRow","removeRow").and("createdAt").substring(0, 4).as("year"),
+				Aggregation.group(Fields.fields("year")).sum("addRow").as("totalAddRow").sum("removeRow").as("totalRemoveRow").count().as("totalCommit"),
 				Aggregation.project("totalAddRow","totalRemoveRow","totalCommit").andExpression("$subtract","$totalAddRow","$totalRemoveRow")
 		);
+		System.out.println("******************aggregation="+agg.toString());
 		AggregationResults aggregationResults=mongoTemplate.aggregate(agg, CommitStatsPo.class, Object.class);
-
+		System.out.println("******************aggregationResults="+aggregationResults.toString());
 		return aggregationResults.getMappedResults();
 	}
 

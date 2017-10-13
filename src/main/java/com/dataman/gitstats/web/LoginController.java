@@ -25,10 +25,10 @@ public class LoginController extends BaseController{
 
     @RequestMapping(value = "/login",method = RequestMethod.POST)
     @ApiOperation(value = "登录")
-    public Object login(String username, String password) throws Exception {
+    public Object login(@RequestBody User user) throws Exception {
         json.clear();
-        User user=loginService.login(username, password);
-        setJson(SUCCESS_CODE,user.getToken());
+        User loginUser=loginService.login(user.getUsername(), user.getPassword());
+        setJson(SUCCESS_CODE,loginUser.getToken());
         return json;
     }
 

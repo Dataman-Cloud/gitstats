@@ -128,6 +128,8 @@
 					</el-select>
 				</el-form-item>
 
+
+
 				<el-form-item>
 					<el-input v-model="gitlab_project.viewName" placeholder="请输入项目别名"></el-input>
 				</el-form-item>
@@ -209,7 +211,7 @@
                 console.log(this.$refs.addForm);
                 self.$refs.addForm.validate((valid) => {
                     if(valid){
-                        axios.post(baseUrl + '/project/', self.gitlab_project)
+                        axios.post(baseUrl + '/project/', self.gitlab_project,{"headers":{"token":localStorage.getItem("token")}})
                             .then(function (response) {
                                 console.log(response);
                                 if (response.data.resultCode == "00") {
@@ -260,7 +262,7 @@
                     cancelButtonText: '取消',
                     type: 'warning'
                 }).then(() => {
-                    axios.delete(baseUrl + "/project/" + projectId).then((response) => {
+                    axios.delete(baseUrl + "/project/" + projectId,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
                     if(response.data.resultCode == "00"
             )
                 {

@@ -7,7 +7,7 @@ package com.dataman.gitstats.exception;
 public class BusinessException extends Exception{
 
     private String resultCode;
-    private String message;
+    private String data;
 
     public BusinessException(ApiResultCode apiResultCode){
         this(apiResultCode.getCode(),apiResultCode.getMessage());
@@ -16,7 +16,7 @@ public class BusinessException extends Exception{
     public BusinessException(String resultCode,String message){
         super(message);
         this.resultCode=resultCode;
-        this.message=message;
+        this.data=message;
     }
 
     public String getResultCode() {
@@ -27,12 +27,11 @@ public class BusinessException extends Exception{
         this.resultCode = resultCode;
     }
 
-    @Override
-    public String getMessage() {
-        return message;
+    public String getData() {
+        return data;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setData(String data) {
+        this.data = data;
     }
 }

@@ -53,8 +53,7 @@ public class AuthAspect {
      */
     @Before("authAspect()")
     public void doBefore(JoinPoint joinPoint) throws BusinessException{
-
-        log.info("====================进入认证前置拦截器=================");
+        log.debug("====================进入认证前置拦截器=================");
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String token=request.getHeader("token");
         if(token==null){

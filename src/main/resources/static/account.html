@@ -211,7 +211,7 @@
                 console.log(this.$refs.addForm);
                 self.$refs.addForm.validate((valid) => {
                     if(valid){
-                        axios.post(baseUrl + '/account/', self.gitlab_account)
+                        axios.post(baseUrl + '/account/', self.gitlab_account,{"headers":{"token":localStorage.getItem("token")}})
                             .then(function (response) {
                                 console.log(response);
                                 var message="添加账号成功";
@@ -268,7 +268,7 @@
                     cancelButtonText: '取消',
                     type: 'warning'
                 }).then(() => {
-                    axios.delete(baseUrl + "/account/" + accountId).then((response) => {
+                    axios.delete(baseUrl + "/account/" + accountId,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
                     if(response.data.resultCode == "00"
             )
                 {
@@ -288,7 +288,7 @@
             }).
                 catch((error) => {
                     self.$notify.error({
-                    title: '获取账号错误',
+                    title: '删除gitlab账号失败',
                     message: error.response.data.data || error.message
                 });
             })

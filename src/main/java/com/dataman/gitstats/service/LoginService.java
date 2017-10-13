@@ -35,8 +35,7 @@ public class LoginService {
         user.setToken(token);
 
         user.setExpire(System.currentTimeMillis()+1000*60*30);
-        userRepository.save(user);
-        return user;
+        return userRepository.save(user);
     }
 
     public User checkLogin(String token) throws BusinessException{
