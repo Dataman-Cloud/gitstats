@@ -37,9 +37,6 @@
 				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
 					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item>
 					<el-menu-item index="2"><a href="project.html">项目管理</a></el-menu-item>
-					<!--<el-menu-item index="3"><a href="branch.html">版本管理</a></el-menu-item>-->
-					<el-menu-item index="4"><a href="commit.html">COMMIT记录</a></el-menu-item>
-					<el-menu-item index="5"><a href="webhook.html">PUSH记录</a></el-menu-item>
 				</el-menu>
 
 			</el-col>
@@ -128,10 +125,24 @@
 					</el-select>
 				</el-form-item>
 
+				<el-form-item label="项目中文名">
+					<el-input v-model="gitlab_project.viewName" placeholder="请输入在报表页展示的项目名称"></el-input>
+				</el-form-item>
 
+				<el-form-item label="统计时间单位">
+					<el-select v-model="gitlab_project.dateformat" placeholder="请选择统计单位" :no-data-text="emptyText">
+						<el-option
+								v-for="item in dateformats"
+								:key="item.value"
+								:label="item.label"
+								:value="item.value">
+						</el-option>
+						</el-option>
+					</el-select>
+				</el-form-item>
 
-				<el-form-item>
-					<el-input v-model="gitlab_project.viewName" placeholder="请输入项目别名"></el-input>
+				<el-form-item label="统计周期">
+					<el-input v-model="gitlab_project.lastDate" placeholder="请输入统计周期（以统计时间单位为单位）"></el-input>
 				</el-form-item>
 
 				<el-form-item>
@@ -161,11 +172,24 @@
                     id: null,
                     accountid:null,
                     branch: null,
-                    proid:'',
+                    proid:null,
                     webUrl:null,
                     projectNameWithNamespace:null,
-                    viewName:null
+                    viewName:null,
+                    dateformat:null,
+                    lastDate:null
                 },
+				dateformats:[{
+                    value: 'YMD',
+                    label: '日'
+                }, {
+                    value: 'YW',
+                    label: '周'
+                }, {
+                    value: 'YM',
+                    label: '月'
+                }],
+                value: '',
                 rules: {
                     accountid: [
                         {required: true, message: '请选择gitlab账号', trigger: 'blur'}

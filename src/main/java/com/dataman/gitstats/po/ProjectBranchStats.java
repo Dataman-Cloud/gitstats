@@ -35,6 +35,8 @@ public class ProjectBranchStats {
 	private String showLastupdate;
 	Date createdate;
 	private String showCreatedate;
+	private String dateformat;//日期格式    YMD统计年月日   YM 统计年月  YW  统计年星期
+	private Integer lastDate;//统计最近日期数量，与dateformat联合使用     如dateformat为YMD，lastdate为30，则展示最近30天以天为单位统计
 
 	
 	public String getId() {
@@ -136,6 +138,20 @@ public class ProjectBranchStats {
 	public void setCreatedAt(Date createdAt) {
 		this.createdAt = createdAt;
 	}
-	
-	
+
+	public String getDateformat() {
+		return dateformat;
+	}
+
+	public void setDateformat(String dateformat) {
+		this.dateformat = dateformat;
+	}
+
+	public Integer getLastDate() {
+		return lastDate;
+	}
+
+	public void setLastDate(Integer lastDate) {
+		this.lastDate = lastDate;
+	}
 }

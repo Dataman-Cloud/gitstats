@@ -3,7 +3,7 @@ package com.dataman.gitstats.param;
 import javax.validation.constraints.NotNull;
 
 public class AddProjectParam {
-    String id;        //weburl+proid+branch确保分支唯一，不重复添加
+    String id;        //mongodb 主键
     @NotNull
     String accountid;
     @NotNull
@@ -11,6 +11,8 @@ public class AddProjectParam {
     @NotNull
     Integer proid;
     String viewName;//页面展示项目别名
+    private String dateformat;//日期格式    YMD统计年月日   YM 统计年月  YW  统计年星期
+    private Integer lastDate;//统计最近日期数量，与dateformat联合使用     如dateformat为YMD，lastdate为30，则展示最近30天以天为单位统计
 
     public String getId() {
         return id;
@@ -50,5 +52,21 @@ public class AddProjectParam {
 
     public void setViewName(String viewName) {
         this.viewName = viewName;
+    }
+
+    public String getDateformat() {
+        return dateformat;
+    }
+
+    public void setDateformat(String dateformat) {
+        this.dateformat = dateformat;
+    }
+
+    public Integer getLastDate() {
+        return lastDate;
+    }
+
+    public void setLastDate(Integer lastDate) {
+        this.lastDate = lastDate;
     }
 }
