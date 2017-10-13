@@ -1,79 +1,138 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.dataman</groupId>
-	<artifactId>gitstats</artifactId>
-	<version>1.0</version>
-	<packaging>jar</packaging>
+    <groupId>com.dataman</groupId>
+    <artifactId>gitstats</artifactId>
+    <version>1.0</version>
+    <packaging>jar</packaging>
 
-	<name>gitstats</name>
-	<url>http://maven.apache.org</url>
+    <name>gitstats</name>
+    <url>http://maven.apache.org</url>
 
-	<!-- Inherit defaults from Spring Boot -->
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.6.RELEASE</version>
-	</parent>
+    <!-- Inherit defaults from Spring Boot -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>1.5.6.RELEASE</version>
+    </parent>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<springfox.swagger.version>2.6.1</springfox.swagger.version>
-		<java.version>1.8</java.version>
-		<start-class>com.dataman.gitstats.Application</start-class>
-		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
-		<springfox.swagger.version>2.6.1</springfox.swagger.version>
-		<fastjson.version>1.2.7</fastjson.version>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <springfox.swagger.version>2.6.1</springfox.swagger.version>
+        <java.version>1.8</java.version>
+        <start-class>com.dataman.gitstats.Application</start-class>
+        <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <springfox.swagger.version>2.6.1</springfox.swagger.version>
+        <fastjson.version>1.2.7</fastjson.version>
+        <aspectj.version>1.8.9</aspectj.version>
+    </properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<!-- 增加mongodb支持 -->
-	    <dependency>
-	       <groupId>org.springframework.boot</groupId>
-	       <artifactId>spring-boot-starter-data-mongodb</artifactId>
-	    </dependency>
-	    
-	    <dependency>
+    <dependencies>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-	    
-		<!-- begin web rest api -->
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>${springfox.swagger.version}</version>
-		</dependency>
-		<!-- end web rest api -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 增加mongodb支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
 
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-validator</artifactId>
-		</dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.springframework.boot</groupId>-->
+            <!--<artifactId>spring-boot-starter-security</artifactId>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+            <!-- 这个需要为 true 热部署才有效 -->
+            <scope>true</scope>
+        </dependency>
+
+        <!-- begin web rest api -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${springfox.swagger.version}</version>
+        </dependency>
+        <!-- end web rest api -->
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.gitlab4j</groupId>
+            <artifactId>gitlab4j-api</artifactId>
+            <version>4.4.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>${fastjson.version}</version>
+        </dependency>
+
+
+        <dependency>
+              <groupId>org.springframework.boot</groupId>
+             <artifactId>spring-boot-starter-aop</artifactId>
+         </dependency>
+
+    </dependencies>
+
+
+	<!-- Package as an executable jar -->
+	<build>
+		<finalName>gitstats</finalName>
+		<defaultGoal>spring-boot:run</defaultGoal>
+		<plugins>
+			
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>${start-class}</mainClass>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		
-		<dependency>
-		    <groupId>org.gitlab4j</groupId>
-		    <artifactId>gitlab4j-api</artifactId>
-		    <version>4.4.8</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>${fastjson.version}</version>
-		</dependency>
-		
-		
-		
-	</dependencies>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptors>
+						<descriptor>${basedir}/src/main/assembly/config/assembly.xml</descriptor>
+					</descriptors>
+					<encoding>${project.build.encoding}</encoding>
+					<appendAssemblyId>false</appendAssemblyId>
+					<finalName>${project.artifactId}-${project.version}-${maven.build.timestamp}</finalName>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

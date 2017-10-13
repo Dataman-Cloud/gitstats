@@ -11,10 +11,12 @@ import com.dataman.gitstats.po.ProjectBranchStats;
 public interface ProjectBranchStatsRepository extends MongoRepository<ProjectBranchStats, String>{
 
 	
-	public List<ProjectBranchStats> findByProjectid(String projectid);
+//	public List<ProjectBranchStats> findByProjectid(String projectid);
 
-	public ProjectBranchStats findByProjectidAndBranch(String projectid,String branch);
-	
-	public Long deleteByProjectid(String projectid);
+	public ProjectBranchStats findByWeburlAndBranch(String weburl,String branch);
+//
+//	public Long deleteByProjectid(String projectid);
+//
+//	public List<ProjectBranchStats> findByProjectidIn(List<String> ids);
 	
 }

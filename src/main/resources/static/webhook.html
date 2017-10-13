@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GITSTATS</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin:0;
+}
+a {
+	text-decoration: none;
+}
+#app {
+	width: 100%;
+    max-width: 100%;
+    overflow: -webkit-paged-x;
+    overflow-x: hidden;
+}
+#menudiv {
+	background-color: #324157;
+	margin-bottom: 10px;
+}
+
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24">
+		<div class="grid-content bg-purple-dark" id="menudiv">
+			<el-row :gutter="20">
+				<el-col :span="16" :offset="4">
+				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
+					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item> 
+					<el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item>
+					<el-menu-item index="3"> <a href="branch.html">版本管理</a></el-menu-item>
+					<el-menu-item index="4"> <a href="commit.html">COMMIT记录</a></el-menu-item>
+					<el-menu-item index="5"> <a href="webhook.html">PUSH记录</a></el-menu-item>
+				</el-menu>
+				
+				</el-col>
+			</el-row>
+		</div>
+		
+		<el-row :gutter="20">
+			<el-col :span="16" :offset="4">
+			
+			
+			</el-col>
+		</el-row>
+		
+		
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<script>
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '5',
+				}
+			},
+		    methods: {
+		    }, 
+		    mounted () {
+			   console.log("init");
+		    }
+		})
+	</script>
+</body>
+</html>

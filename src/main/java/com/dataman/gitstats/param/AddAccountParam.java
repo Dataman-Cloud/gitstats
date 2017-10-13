@@ -4,6 +4,7 @@ import javax.validation.constraints.NotNull;
 
 public class AddAccountParam {
 
+	String id;
 	@NotNull
 	String url;
 	String user;
@@ -42,5 +43,12 @@ public class AddAccountParam {
 	public void setToken(String token) {
 		this.token = token;
 	}
-	
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 }

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GITSTATS</title>
+    <link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+    <link rel="stylesheet" href="css/element-index.css">
+    <style>
+        body {
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 100%;
+            overflow: -webkit-paged-x;
+            overflow-x: hidden;
+        }
+
+        #menudiv {
+            background-color: #324157;
+            margin-bottom: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <el-form :model="loginForm" :rules="rules" ref="loginForm" label-position="left" label-width="0px"
+             class="demo-ruleForm login-container" >
+        <h3 class="title">系统登录</h3>
+        <el-form-item prop="username">
+            <el-input type="text" v-model="loginForm.username" auto-complete="off" placeholder="账号" @keyup.enter.native="login"  autofocus="autofocus">
+            </el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+            <el-input type="password" v-model="loginForm.password" auto-complete="off" placeholder="密码" @keyup.enter.native="login" autofocus="autofocus">
+            </el-input>
+        </el-form-item>
+        <el-form-item style="width:100%;">
+            <el-button type="primary" style="width:100%;" @click.native.prevent="login" :loading="loading">登录
+            </el-button>
+        </el-form-item>
+    </el-form>
+</div>
+
+<script src="js/base.js"></script>
+<script src="js/Vue.js"></script>
+<script src="js/element-ui.js"></script>
+<script src="js/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                loading: false,
+                loginForm: {
+                    username: null,
+                    password: null
+                },
+                rules: {
+                    username: [
+                        {required: true, message: '请输入账号', trigger: 'blur'}
+                    ],
+                    password: [
+                        {required: true, message: '请输入密码', trigger: 'blur'}
+                    ]
+                }
+            }
+        },
+        methods: {
+            login :function () {
+                var self = this;
+                self.$refs.loginForm.validate((valid) => {
+                    if(valid){
+                        this.loading = true;
+                        axios.post(baseUrl + '/login/',self.loginForm)
+                            .then(function (response) {
+                                self.loading=false;
+                                console.log(response.data.resultCode);
+                                if (response.data.resultCode == "00") {
+                                    localStorage.setItem("token",response.data.data);
+                                    window.location.href="account.html";
+                                } else {
+                                    self.$notify.error({
+                                        title: '登录失败',
+                                        message: response.data.data
+                                    });
+                                }
+                            })
+                            .catch(function (error) {
+                                self.loading=false;
+                                self.$notify.error({
+                                    title: '登录失败',
+                                    message: error.response.data.data || error.message
+                                });
+                            });
+                    }
+                });
+            }
+        }
+    })
+</script>
+<style>
+    .login-container {
+        /*box-shadow: 0 0px 8px 0 rgba(0, 0, 0, 0.06), 0 1px 0px 0 rgba(0, 0, 0, 0.02);*/
+        -webkit-border-radius: 5px;
+        border-radius: 5px;
+        -moz-border-radius: 5px;
+        background-clip: padding-box;
+        margin: 180px auto;
+        width: 350px;
+        padding: 35px 35px 15px 35px;
+        background: #fff;
+        border: 1px solid #eaeaea;
+        box-shadow: 0 0 25px #cac6c6;
+    }
+    .title {
+        margin: 0px auto 40px auto;
+        text-align: center;
+        color: #505458;
+    }
+
+    .remember {
+        margin: 0px 0px 35px 0px;
+    }
+
+</style>
+</body>
+</html>

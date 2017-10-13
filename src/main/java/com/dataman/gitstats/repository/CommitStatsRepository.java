@@ -14,9 +14,6 @@ import com.dataman.gitstats.po.CommitStatsPo;
 @Component
 public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,String>{
 	
-	public Long deleteByProidAndBranch(String proid,String branch);
-	
-	public Long deleteByProid(String proid);
+	public Long deleteByBranchId(String branchId);
 
-	
 }

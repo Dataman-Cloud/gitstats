@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>gitstats</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin: 0;
+}
+
+a {
+	text-decoration: none;
+}
+
+#app {
+	width: 100%;
+	max-width: 100%;
+	overflow: -webkit-paged-x;
+	overflow-x: hidden;
+}
+
+.el-carousel__item h1 {
+	text-align: center;
+}
+
+.el-carousel__item:nth-child(2n) {
+	background-color: #99a9bf;
+}
+
+.el-carousel__item:nth-child(2n+1) {
+	background-color: #d3dce6;
+}
+
+.branchStats{
+	
+}
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24"> 
+		<el-carousel :height="appheight"> 
+			<el-carousel-item v-for="pro in projects">
+				<h1>{{ pro.projectNameWithNamespace }}:{{ pro.branch }}</h1>
+				<projectstats :pbsid="pro.id">
+					
+				</projectstats>
+			</el-carousel-item> 
+		</el-carousel> 
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<script src="js/echarts.min.js"></script>
+	
+	<script type="text/x-template" id="branchStats-template">
+  		<div class='branchStats'>
+			<el-row :gutter="20">
+  				<el-col :span="15"><div :id="getAllId(pbsid)" style="width:100%;height:300px;">branchStats_ALL</div></el-col>
+  				<el-col :span="9"><div :id="getRageId(pbsid)" style="width:100%;height:300px;">branchStats_RAGE</div></el-col>
+			</el-row>
+			
+		</div>
+	</script>
+	
+	
+	<script>
+		Vue.component('projectstats', {
+			props: {
+				pbsid: [Number, String],
+			},
+			template: "#branchStats-template",
+			data: function (){
+				return {
+					statsData:[],
+					statsByUserData:[],
+				}
+			},
+			methods:{
+				getStatsData(){
+					var self=this;
+					axios.get('/project/projectBranchStats/'+self.pbsid+'/byDay').then(function (response) {
+		    			self.statsData= response.data.data.data;
+		    			self.showStatsData(self.statsData);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取projectBranchStats异常',
+		        	          message: error
+		        	    });
+		    		});
+				},
+				getStatsByUserData(){
+					var self=this;
+					axios.get('/project/projectBranchStats/'+self.pbsid+"/byUser").then(function (response) {
+		    			self.statsByUserData= response.data.data.data;
+		    			self.showStatsDataByUser(self.statsByUserData)
+		    			// console.log(self.statsByUserData);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取projectBranchStatsByuser异常',
+		        	          message: error
+		        	    });
+		    		});
+				},
+				showStatsData(data){
+					// console.log(data);
+					var days=[],addrows=[],removerows=[],commits=[];
+					for(var i in data){
+						days.push(data[i]._id);
+						addrows.push(data[i].addrow);
+						removerows.push(data[i].removerow);
+						commits.push(data[i].commit);
+					}
+					var myChart = echarts.init(document.getElementById('branchStats_ALL_'+this.pbsid));
+					var option = {
+				            // title: { text: '总统计' },
+				            // tooltip: {},
+				            legend: { data:['添加行数','删除行数'] },
+				            xAxis: { data: days },
+				            yAxis: {},
+				            series: [{ name: '添加行数', type: 'line', data: addrows }
+				            	,{ name: '删除行数', type: 'line', data: removerows }]
+				        };
+					myChart.setOption(option);
+				},
+				showStatsDataByUser(data){
+					console.log(data);
+					var users=[],seriesdata=[];
+					for(var i in data){
+						users.push(data[i]._id);
+						seriesdata.push({'name':data[i]._id,'value':data[i].addrow});
+					}
+					var myChart = echarts.init(document.getElementById('branchStats_RAGE_'+this.pbsid));
+					var option = {
+		        		    tooltip:{trigger: 'item',formatter: "{a} <br/>{b} : {c} ({d}%)"},
+		        		    series:{name:'代码量',type: 'pie',data:seriesdata}
+		        		}
+					myChart.setOption(option);
+				},
+				getAllId(id){
+					return "branchStats_ALL_"+id;
+				},
+				getRageId(id){
+					return "branchStats_RAGE_"+id;
+				},
+			},
+			mounted(){
+				console.log("init");
+				this.getStatsData();
+				this.getStatsByUserData();
+				// console.log(this.pbsid);
+			}
+		});
+	
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '1',
+					projects: [],
+					appheight: '600px',
+				}
+			},
+		    methods: {
+		    	getProject(){
+		    		var self=this;
+		    		axios.get('/project/').then(function (response) {
+		    			self.projects= response.data.data;
+		    			// console.log(self.projects);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取project异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	},
+		    	getWinheight(){
+			    	var winHeight = null;
+			    	//获取窗口高度 
+			    	if (window.innerHeight) 
+			    		winHeight = window.innerHeight; 
+			    	else if ((document.body) && (document.body.clientHeight)) 
+			    		winHeight = document.body.clientHeight; 
+			    	//通过深入Document内部对body进行检测，获取窗口大小 
+			    	if (document.documentElement && document.documentElement.clientHeight) 
+			    		winHeight = document.documentElement.clientHeight; 
+			    	this.appheight = winHeight+'px';
+		    	},
+		    }, 
+		    mounted () {
+			   console.log("init");
+			   this.getWinheight();
+			   this.getProject();
+			   
+		    }
+		})
+	</script>
+</body>
+</html>

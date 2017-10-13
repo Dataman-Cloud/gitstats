@@ -2,13 +2,10 @@ package com.dataman.gitstats.web;
 
 import javax.validation.Valid;
 
+import com.dataman.gitstats.annotation.AuthRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.dataman.gitstats.param.AddAccountParam;
 import com.dataman.gitstats.service.GitlabAccountService;
@@ -24,10 +21,12 @@ public class GitlabAccountController extends BaseController{
 
 	@Autowired
 	GitlabAccountService gitlabAccountService;
-	
+
+	@AuthRequired
 	@RequestMapping(value="/",method=RequestMethod.POST)
 	@ApiOperation(value = "添加gitlab帐号")
-	public Object addAccount(@Valid @RequestBody AddAccountParam param,BindingResult bingingresult){
+	public Object addAccount(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@Valid @RequestBody AddAccountParam param,BindingResult bingingresult){
 		json.clear();
 		if(bingingresult.hasErrors()){
 			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
@@ -49,7 +48,7 @@ public class GitlabAccountController extends BaseController{
 		}
 		return json;
 	}
-	
+
 	@RequestMapping(value="/",method=RequestMethod.GET)
 	@ApiOperation(value = "获取所有的帐号")
 	public Object allAccount(){
@@ -63,10 +62,11 @@ public class GitlabAccountController extends BaseController{
 		}
 		return json;
 	}
-	
+	@AuthRequired
 	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
 	@ApiOperation(value = "删除帐号")
-	public Object delAccount(@ApiParam(required = true, name = "id", value = "帐号id") @PathVariable  String id){
+	public Object delAccount(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@ApiParam(required = true, name = "id", value = "帐号id") @PathVariable  String id){
 		json.clear();
 		try {
 			setJson(SUCCESS_CODE, gitlabAccountService.delAccount(id));
