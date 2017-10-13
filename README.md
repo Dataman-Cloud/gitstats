@@ -23,3 +23,6 @@ api页面 域名:端口/swagger/index.html
 
 ### 指定端口 
 java -jar gitstats.tar --server.port=8888
+
+### 指定mongoUrl
+java -jar gitstats.tar --spring.data.mongodb.uri=mongodb://192.168.199.32:27027/gitstats
