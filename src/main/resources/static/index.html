@@ -248,7 +248,7 @@ a {
 		    methods: {
 		    	getProject(){
 		    		var self=this;
-		    		axios.get('/project/').then(function (response) {
+		    		axios.get('/project/?limit=1').then(function (response) {
 		    			self.projects = [];
 		    			self.projects = response.data.data;
 		    			// console.log(self.projects);

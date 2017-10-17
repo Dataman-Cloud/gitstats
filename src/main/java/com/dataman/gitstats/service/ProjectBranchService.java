@@ -26,12 +26,10 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.Fields;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
-import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import com.alibaba.fastjson.JSON;
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
@@ -43,8 +41,6 @@ import com.dataman.gitstats.vo.CommitStatsVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsPlusVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 import com.dataman.gitstats.vo.StatsByUserByDayVo;
-import com.mongodb.AggregationOutput;
-import com.mongodb.DBObject;
 
 @Service
 public class ProjectBranchService {
@@ -137,8 +133,13 @@ public class ProjectBranchService {
 		return projectBranchStatsRepository.findByWeburlAndBranch(weburl,branch);
 	}
 
-	public List<ProjectBranchStats> getAllProjectBranchStats(){
-		return projectBranchStatsRepository.findAll();
+	public List<ProjectBranchStats> getAllProjectBranchStats(String limit){
+		if (StringUtils.isEmpty(limit)) {
+			return projectBranchStatsRepository.findAll();
+		}else{
+			return projectBranchStatsRepository.findByStatus(1);
+		}
+		
 	}
 
 	public void deleteProjectBranchStats(String id){

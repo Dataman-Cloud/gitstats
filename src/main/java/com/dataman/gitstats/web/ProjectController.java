@@ -34,10 +34,10 @@ public class ProjectController extends BaseController {
 
 	@RequestMapping(value = "/",method = RequestMethod.GET)
 	@ApiOperation(value = "获取所有统计项目")
-	public Object getAll(){
+	public Object getAll(@RequestParam(required = false) @ApiParam(name = "limit", value = "是否过滤未初始化") String limit){
 		json.clear();
 		try {
-			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
+			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats(limit));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
