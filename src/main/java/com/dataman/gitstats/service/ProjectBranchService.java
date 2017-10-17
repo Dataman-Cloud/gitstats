@@ -146,6 +146,25 @@ public class ProjectBranchService {
 		commitStatsRepository.deleteByBranchId(id);
 	}
 
+	/**
+	 * @method: resetProjectBranchStats
+	 * @Description	重置项目，清空数据并重新初始化
+	 * @author biancl
+	 * @date 2017-10-15 10:17
+	 * @param [id]
+	 * @return void
+	 */
+	public void resetProjectBranchStats(String id) throws GitLabApiException {
+
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(id);
+		commitStatsRepository.deleteByBranchId(id);//删除已同步的commit
+		pbs.setStatus(0);
+		projectBranchStatsRepository.save(pbs);
+
+		asyncTask.initProjectStats(pbs);
+		commitStatsRepository.deleteByBranchId(id);
+	}
+
 	public void modifyProjectBranchStats(AddProjectParam param) throws Exception{
 		ProjectBranchStats projectBranchStats=projectBranchStatsRepository.findOne(param.getId());
 		if(param.getId()==null || projectBranchStats==null){

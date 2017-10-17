@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import com.dataman.gitstats.annotation.AuthRequired;
+import org.gitlab4j.api.GitLabApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 
@@ -53,6 +54,17 @@ public class ProjectController extends BaseController {
 			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId){
 		json.clear();
 		projectBranchService.deleteProjectBranchStats(branchId);
+		setJson(SUCCESS_CODE);
+		return json;
+	}
+	@AuthRequired
+	@RequestMapping(value = "/{branchId}",method = RequestMethod.PUT)
+	@ApiOperation(value = "重新初始化项目")
+	public Object reset(
+			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId) throws GitLabApiException {
+		json.clear();
+		projectBranchService.resetProjectBranchStats(branchId);
 		setJson(SUCCESS_CODE);
 		return json;
 	}
