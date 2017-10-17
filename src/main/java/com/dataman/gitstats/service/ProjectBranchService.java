@@ -163,7 +163,6 @@ public class ProjectBranchService {
 		projectBranchStatsRepository.save(pbs);
 
 		asyncTask.initProjectStats(pbs);
-		commitStatsRepository.deleteByBranchId(id);
 	}
 
 	public void modifyProjectBranchStats(AddProjectParam param) throws Exception{
