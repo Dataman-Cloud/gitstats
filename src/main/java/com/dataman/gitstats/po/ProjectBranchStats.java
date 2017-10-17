@@ -25,6 +25,7 @@ public class ProjectBranchStats {
 	String projectNameWithNamespace;//项目名称+命名空间  只有项目名称可能会重复
 	int proid;
 	int status; // 0  未初始化  1 初始化
+	private String showStatus;
 	String viewName;//页面展示项目别名
 	String weburl;
 	int totalRow;
@@ -153,5 +154,9 @@ public class ProjectBranchStats {
 
 	public void setLastDate(Integer lastDate) {
 		this.lastDate = lastDate;
+	}
+
+	public String getShowStatus(){
+		return this.status==0?"正在初始化":"初始化完成";
 	}
 }

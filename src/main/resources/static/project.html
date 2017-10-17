@@ -59,6 +59,7 @@
 				<el-table-column
 						prop="weburl"
 						label="gitlab地址"
+						width="280"
 				>
 				</el-table-column>
 				<el-table-column
@@ -72,14 +73,21 @@
 				>
 				</el-table-column>
 				<el-table-column
+						prop="showStatus"
+						label="项目状态">
+				</el-table-column>
+				<el-table-column
 						prop="showLastupdate"
 						label="修改日期">
 				</el-table-column>
 				<el-table-column
-						label="操作">
+						label="操作"
+						width="280"
+				>
 					<template scope="scope">
 						<el-button @click="showEdit(scope.row)" type="info" icon="edit" size="small">编辑</el-button>
 						<el-button @click="del(scope.row.id)" type="danger" icon="delete" size="small">删除</el-button>
+						<el-button @click="reset(scope.row.id)" type="danger" icon="warning" size="small">重置</el-button>
 					</template>
 				</el-table-column>
 			</el-table>
@@ -128,7 +136,7 @@
 				<el-form-item label="项目中文名">
 					<el-input v-model="gitlab_project.viewName" placeholder="请输入在报表页展示的项目名称"></el-input>
 				</el-form-item>
-
+<!--
 				<el-form-item label="统计时间单位">
 					<el-select v-model="gitlab_project.dateformat" placeholder="请选择统计单位" :no-data-text="emptyText">
 						<el-option
@@ -144,7 +152,7 @@
 				<el-form-item label="统计周期">
 					<el-input v-model="gitlab_project.lastDate" placeholder="请输入统计周期（以统计时间单位为单位）"></el-input>
 				</el-form-item>
-
+-->
 				<el-form-item>
 					<el-button type="primary" @click="add">提交</el-button>
 					<el-button @click="closeDialog">取消</el-button>
@@ -293,7 +301,7 @@
                     self.$message.success({
                         message: "删除统计项目成功"
                     });
-                    self.getPorjects;
+                    self.getPorjects();
                 }
             else
                 {
@@ -307,6 +315,40 @@
                 catch((error) => {
                     self.$notify.error({
                     title: '删除统计项目失败',
+                    message: error.response.data.data || error.message
+                });
+            })
+                ;
+            })
+            },
+            reset(projectId){
+                var self = this;
+                this.$confirm('确认重新初始化项目？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.put(baseUrl + "/project/" + projectId,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
+                    if(response.data.resultCode == "00"
+            )
+                {
+                    self.$message.success({
+                        message: "初始化项目成功"
+                    });
+                    self.getPorjects();
+                }
+            else
+                {
+                    self.$notify.error({
+                        title: '初始化项目失败',
+                        message: response.data.data
+                    });
+                }
+
+            }).
+                catch((error) => {
+                    self.$notify.error({
+                    title: '初始化项目失败',
                     message: error.response.data.data || error.message
                 });
             })

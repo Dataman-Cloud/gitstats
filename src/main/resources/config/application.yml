@@ -40,7 +40,7 @@ gitlab:
 spring:
   data:
     mongodb:
-        uri: mongodb://192.168.145.131:27017/gitstats
+        uri: mongodb://192.168.199.32:27027/gitstats
   devtools:
     restart:
       additional-paths: src\main\resources\static
@@ -57,4 +57,4 @@ gitstats:
 #  secretToken:
 
   
-  
+ 
