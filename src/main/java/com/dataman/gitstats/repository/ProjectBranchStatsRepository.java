@@ -19,4 +19,6 @@ public interface ProjectBranchStatsRepository extends MongoRepository<ProjectBra
 //
 //	public List<ProjectBranchStats> findByProjectidIn(List<String> ids);
 	
+	public List<ProjectBranchStats> findByStatus(int status);
+	
 }

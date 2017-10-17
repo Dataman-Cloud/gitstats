@@ -44,7 +44,7 @@ public class UserController extends BaseController{
      */
     @RequestMapping(value = "/",method = RequestMethod.POST)
     @ApiOperation(value = "添加用户")
-//    @AuthRequired
+    //@AuthRequired
     public Object add(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
             User user){
         json.clear();
