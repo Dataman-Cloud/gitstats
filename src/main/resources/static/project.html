@@ -52,40 +52,16 @@
 
 	<el-row>
 		<el-col :span="22" :offset="1">
-			<el-table
-					:data="projects"
-					:empty-text="emptyText"
-			>
-				<el-table-column
-						prop="weburl"
-						label="gitlab地址"
-						width="280"
-				>
-				</el-table-column>
-				<el-table-column
-						prop="projectNameWithNamespace"
-						label="项目名称"
-				>
-				</el-table-column>
-				<el-table-column
-						prop="branch"
-						label="分支名称"
-				>
-				</el-table-column>
-				<el-table-column
-						prop="showStatus"
-						label="项目状态">
-				</el-table-column>
-				<el-table-column
-						prop="showLastupdate"
-						label="修改日期">
-				</el-table-column>
-				<el-table-column
-						label="操作"
-						width="280"
-				>
+			<el-table :data="projects" :empty-text="emptyText" >
+				<el-table-column prop="weburl" label="gitlab地址" width="280" ></el-table-column>
+				<el-table-column prop="projectNameWithNamespace" label="项目名称" ></el-table-column>
+				<el-table-column prop="branch" label="分支名称" width="120"></el-table-column>
+				<el-table-column prop="showStatus" label="项目状态" width="120"></el-table-column>
+				<el-table-column prop="showLastupdate" label="修改日期" width="180"></el-table-column>
+				<el-table-column label="操作" width="320" >
 					<template scope="scope">
 						<el-button @click="showEdit(scope.row)" type="info" icon="edit" size="small">编辑</el-button>
+						<el-button @click="showDetails(scope.row.id)" type="info" icon="document" size="small">详情</el-button>
 						<el-button @click="del(scope.row.id)" type="danger" icon="delete" size="small">删除</el-button>
 						<el-button @click="reset(scope.row.id)" type="danger" icon="warning" size="small">重置</el-button>
 					</template>
@@ -100,35 +76,20 @@
 			<el-form ref="addForm" :model="gitlab_project" :rules="rules" label-width="100px" label-position="left">
 				<el-form-item label="gitlab账号" prop="accountid">
 					<el-select v-model="gitlab_project.accountid" placeholder="请选择gitlab账号" @change="getAccountProjects"  :no-data-text="emptyText">
-						<el-option
-								v-for="item in gitlab_accounts"
-								:label="item.name"
-								:value="item.id"
-						>
-
+						<el-option v-for="item in gitlab_accounts" :label="item.name" :value="item.id" >
 						</el-option>
 					</el-select>
 				</el-form-item>
 
 				<el-form-item label="项目名称" prop="proid">
 					<el-select v-model.number="gitlab_project.proid" placeholder="请选择统计项目" @change="getProjectBranchs" :no-data-text="emptyText">
-						<el-option
-								v-for="item in account_projects"
-								:label="item.nameWithNamespace"
-								:value="item.id"
-						>
-
+						<el-option v-for="item in account_projects" :label="item.nameWithNamespace" :value="item.id" >
 						</el-option>
 					</el-select>
 				</el-form-item>
 				<el-form-item label="项目分支" prop="branch">
 					<el-select v-model="gitlab_project.branch" placeholder="请选择要统计的分支" :no-data-text="emptyText">
-						<el-option
-								v-for="item in project_branchs"
-								:label="item.name"
-								:value="item.name"
-						>
-
+						<el-option v-for="item in project_branchs" :label="item.name" :value="item.name" >
 						</el-option>
 					</el-select>
 				</el-form-item>
@@ -187,27 +148,15 @@
                     dateformat:null,
                     lastDate:null
                 },
-				dateformats:[{
-                    value: 'YMD',
-                    label: '日'
-                }, {
-                    value: 'YW',
-                    label: '周'
-                }, {
-                    value: 'YM',
-                    label: '月'
-                }],
+				dateformats:[{ value: 'YMD', label: '日' }, 
+						{ value: 'YW', label: '周' }, 
+						{ value: 'YM', label: '月' }
+					],
                 value: '',
                 rules: {
-                    accountid: [
-                        {required: true, message: '请选择gitlab账号', trigger: 'blur'}
-                    ],
-                    proid:[
-                        {required: true, message: '请选择统计项目'}
-					],
-                    branch: [
-                        {required: true, message: '请选择项目分支', trigger: 'blur'}
-                    ]
+                    accountid: [ {required: true, message: '请选择gitlab账号', trigger: 'blur'} ],
+                    proid:[ {required: true, message: '请选择统计项目'} ],
+                    branch: [ {required: true, message: '请选择项目分支', trigger: 'blur'} ]
                 },
                 projects: [],
                 activeIndex: "2",
@@ -216,8 +165,7 @@
             }
         },
         methods: {
-            getPorjects()
-            {
+            getPorjects(){
                 var self = this;
                 axios.get(baseUrl + '/project/')
                     .then(function (response) {
@@ -230,8 +178,7 @@
                             });
                         }
 
-                    })
-                    .catch(function (error) {
+                    }).catch(function (error) {
                         self.$notify.error({
                             title: '获取项目失败',
                             message: error.response.data.data || error.message
@@ -251,9 +198,7 @@
                                     if(self.gitlab_project.id!=null){
                                         message="修改统计项目成功";
                                     }
-                                    self.$message.success({
-                                        message: message
-                                    });
+                                    self.$message.success({message: message });
                                     self.showDialog = false;
                                     self.getPorjects();
                                 } else {
@@ -262,8 +207,7 @@
                                         message: response.data.data
                                     });
                                 }
-                            })
-                            .catch(function (error) {
+                            }).catch(function (error) {
                                 console.log("******************error" + error);
                                 self.$notify.error({
                                     title: '添加统计项目失败',
@@ -271,11 +215,9 @@
                                 });
                                 self.$refs.addForm.resetFields();
                             });
-                    }
-                }
-            )
-                ;
-
+	                    }
+	                }
+	            );
             },
             showEdit(project){
                 this.showDialog = true;
@@ -295,32 +237,22 @@
                     type: 'warning'
                 }).then(() => {
                     axios.delete(baseUrl + "/project/" + projectId,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
-                    if(response.data.resultCode == "00"
-            )
-                {
-                    self.$message.success({
-                        message: "删除统计项目成功"
-                    });
-                    self.getPorjects();
-                }
-            else
-                {
-                    self.$notify.error({
-                        title: '删除统计项目失败',
-                        message: response.data.data
-                    });
-                }
-
-            }).
-                catch((error) => {
-                    self.$notify.error({
-                    title: '删除统计项目失败',
-                    message: error.response.data.data || error.message
-                });
-            })
-                ;
-            })
-            },
+	                    if(response.data.resultCode == "00" ){
+	                    	self.$message.success({message: "删除统计项目成功" });
+	                    	self.getPorjects();
+	                	} else {
+		                    self.$notify.error({
+		                        title: '删除统计项目失败',
+		                        message: response.data.data
+		                    });
+	                   }
+            	   }).catch((error) => {
+                     self.$notify.error({
+                     title: '删除统计项目失败',
+                     message: error.response.data.data || error.message
+                   });
+            	   });
+            })},
             reset(projectId){
                 var self = this;
                 this.$confirm('确认重新初始化项目？', '提示', {
@@ -328,33 +260,22 @@
                     cancelButtonText: '取消',
                     type: 'warning'
                 }).then(() => {
-                    axios.put(baseUrl + "/project/" + projectId,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
-                    if(response.data.resultCode == "00"
-            )
-                {
-                    self.$message.success({
-                        message: "初始化项目成功"
-                    });
-                    self.getPorjects();
-                }
-            else
-                {
-                    self.$notify.error({
-                        title: '初始化项目失败',
-                        message: response.data.data
-                    });
-                }
-
-            }).
-                catch((error) => {
-                    self.$notify.error({
-                    title: '初始化项目失败',
-                    message: error.response.data.data || error.message
-                });
-            })
-                ;
-            })
-            },
+                    axios.put(baseUrl + "/project/" + projectId,null,{"headers":{"token":localStorage.getItem("token")}}).then((response) => {
+	                    if(response.data.resultCode == "00"){
+	                    self.$message.success({message: "初始化项目成功" });
+	                    self.getPorjects();
+	                	} else {
+	                    self.$notify.error({
+	                        title: '初始化项目失败',
+	                        message: response.data.data
+	                    });
+                	}}).catch((error) => {
+                    	self.$notify.error({
+                    		title: '初始化项目失败',
+                    		message: error.response.data.data || error.message
+                			});
+            		});
+            })},
             closeDialog(){
                 this.showDialog = false;
             },
@@ -381,9 +302,7 @@
                                 message: response.data.data
                             });
                         }
-
-                    })
-                    .catch(function (error) {
+                    }).catch(function (error) {
                         self.$notify.error({
                             title: '获取账号失败',
                             message: error.response.data.data || error.message
@@ -431,7 +350,10 @@
                             message: error.response.data.data || error.message
                         });
                     });
-            }
+            },
+            showDetails(projectId){
+            	window.location.href=window.location.origin+"/projectStats.html?pId="+projectId;
+            },
         },
         mounted()
         {

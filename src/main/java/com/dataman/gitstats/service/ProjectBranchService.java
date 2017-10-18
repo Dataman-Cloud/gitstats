@@ -164,6 +164,15 @@ public class ProjectBranchService {
 
 		asyncTask.initProjectStats(pbs);
 	}
+	/**
+	 * @method getProAllAuthorName(获取项目所有提交者)
+	 * @return String[]
+	 * @author liuqing
+	 * @date 2017年10月18日 下午4:42:06
+	 */
+	public List<CommitStatsVo> getProAllAuthorName(String id){
+		return proGroupByAuthorName(id);
+	}
 
 	public void modifyProjectBranchStats(AddProjectParam param) throws Exception{
 		ProjectBranchStats projectBranchStats=projectBranchStatsRepository.findOne(param.getId());
@@ -368,6 +377,19 @@ public class ProjectBranchService {
 		return list;
 	}
 	
+//	db.getCollection('commitStatsPo').aggregate([
+//	    {$group:{_id:'$authorName'}}
+//	])
+	public List<CommitStatsVo> proGroupByAuthorName(String id){
+		List<CommitStatsVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+				Aggregation.match(new Criteria("branchId").is(id)),
+				Aggregation.group(Fields.fields("authorName"))
+		);
+		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list =ret.getMappedResults();
+		return list;
+	}
 	
 	
 	/**

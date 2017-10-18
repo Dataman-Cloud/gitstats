@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GITSTATS</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin:0;
+}
+a {
+	text-decoration: none;
+}
+#app {
+	width: 100%;
+    max-width: 100%;
+    overflow: -webkit-paged-x;
+    overflow-x: hidden;
+}
+#menudiv {
+	background-color: #324157;
+	margin-bottom: 10px;
+}
+
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24">
+		<div class="grid-content bg-purple-dark" id="menudiv">
+			<el-row :gutter="20">
+				<el-col :span="16" :offset="4">
+				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
+					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item> 
+					<el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item>
+				</el-menu>
+				</el-col>
+			</el-row>
+		</div>
+		
+		<el-row :gutter="20">
+			<el-col :span="16" :offset="4">
+				<template>
+				  <el-tabs>
+				    <el-tab-pane label="提交记录" >
+				    	<el-form :inline="true" :model="formInline" class="demo-form-inline">
+						  <el-form-item label="提交人" >
+						    <el-select v-model="formInline.authorName" placeholder="提交人">
+						      <el-option v-for="item in users" :key="item._id" :label="item._id" :value="item._id"> </el-option>
+						    </el-select>
+						  </el-form-item>
+						  <el-form-item label="时间范围">
+						    <el-date-picker v-model="formInline.dates" type="daterange" placeholder="选择时间范围"> 
+						    </el-date-picker>
+						  </el-form-item>
+						  <el-form-item>
+						    <el-button type="primary" @click="onSubmit">查询</el-button>
+						  </el-form-item>
+						</el-form>
+				    </el-tab-pane>
+				    <el-tab-pane label="用户统计" >用户统计</el-tab-pane>
+				    <el-tab-pane label="时间统计" >时间统计</el-tab-pane>
+				  </el-tabs>
+				</template>
+			
+			</el-col>
+		</el-row>
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<script>
+		function GetQueryString(name){
+		     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+		     var r = window.location.search.substr(1).match(reg);
+		     if(r!=null)return  unescape(r[2]); return null;
+		}
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '2',
+					pId: GetQueryString("pId"),
+					users:[],
+					formInline: {
+						authorName: '',
+						dates: ''
+				    },
+				}
+			},
+		    methods: {
+		    	onSubmit(){
+		    		console.log(formInline);
+		    	},
+		    	getUsers(){
+		    		var self=this;
+					axios.get('/project/projectBranchStats/'+self.pId+'/users').then(function (response) {
+		    			self.users = response.data.data;
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取ProjectUsers异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	}
+		    }, 
+		    mounted () {
+		       this.getUsers();
+			   console.log("int");
+			   console.log(this.pId);
+		    }
+		})
+	</script>
+</body>
+</html>

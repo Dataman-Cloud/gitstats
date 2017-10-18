@@ -173,4 +173,19 @@ public class ProjectController extends BaseController {
 		}
 		return json;
 	}
+	
+	@RequestMapping(value="/projectBranchStats/{id}/users",method=RequestMethod.GET)
+	@ApiOperation(value = "获取项目所有提交者")
+	public Object showProjectBranchByDayAndUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectBranchService.getProAllAuthorName(id));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
 }

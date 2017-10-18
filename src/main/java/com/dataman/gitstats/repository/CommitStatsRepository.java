@@ -1,5 +1,7 @@
 package com.dataman.gitstats.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Component;
 
@@ -16,4 +18,6 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,St
 	
 	public Long deleteByBranchId(String branchId);
 
+	
+	public Page<CommitStatsPo> findByBranchId(String branchId,Pageable pageable);
 }
