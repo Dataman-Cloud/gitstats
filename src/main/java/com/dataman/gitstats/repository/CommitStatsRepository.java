@@ -1,5 +1,7 @@
 package com.dataman.gitstats.repository;
 
+import java.util.Date;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -18,6 +20,7 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,St
 	
 	public Long deleteByBranchId(String branchId);
 
+	public Page<CommitStatsPo> findByBranchIdAndCreatedAtBetween(String branchId,Date begin,Date end,Pageable pageable);
 	
-	public Page<CommitStatsPo> findByBranchId(String branchId,Pageable pageable);
+	public Page<CommitStatsPo> findByBranchIdAndAuthorNameAndCreatedAtBetween(String branchId,String authorName,Date begin,Date end,Pageable pageable);
 }

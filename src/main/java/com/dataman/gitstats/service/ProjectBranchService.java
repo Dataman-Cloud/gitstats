@@ -292,7 +292,6 @@ public class ProjectBranchService {
 //	,{$project : {_id :0, authorName : '$_id.authorName', dayinfo : {day : '$_id.day', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
 //	,{$group:{_id:"$authorName", days:{$push:"$dayinfo"}, addrow: {$sum: "$dayinfo.addRow"},removeRow: {$sum: "$dayinfo.removeRow"},commit: {$sum: "$dayinfo.commit"}}}
 //	,{$sort : { addrow : -1 }}
-//	,{ $limit : 8 }
 //	])
 	public List<StatsByUserByDayVo> statsByUserByDay(ProjectBranchStats pbs,String dataformat,MatchOperation match){
 		List<StatsByUserByDayVo> list=null;
@@ -308,8 +307,7 @@ public class ProjectBranchService {
 				Aggregation.group(Fields.fields("authorName")).sum("dayinfo.addrow").as("addrow")
 					.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit")
 					.push("dayinfo").as("data"),
-				Aggregation.sort(Direction.DESC, "addrow"),
-				Aggregation.limit(8l)
+				Aggregation.sort(Direction.DESC, "addrow")
 			);
 		System.out.println(agg.toString());
 		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
