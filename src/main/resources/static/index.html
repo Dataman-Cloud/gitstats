@@ -65,7 +65,7 @@ a {
 		<el-carousel :height="appheight"> 
 			<el-carousel-item v-for="pro in projects">
 				<h1>{{ pro.viewName }}</h1>
-				<projectstats :pbsid="pro.id">
+				<projectstats :pbsid="pro.id" :appwidth="appwidth">
 					
 				</projectstats>
 			</el-carousel-item> 
@@ -124,6 +124,7 @@ a {
 		Vue.component('projectstats', {
 			props: {
 				pbsid: [Number, String],
+				appwidth: [Number, String],
 			},
 			template: "#branchStats-template",
 			data: function (){
@@ -227,6 +228,8 @@ a {
 			mounted(){
 				console.log(this.pbsid + "init" + new Date());
 				// console.log(this.pbsid);
+				var divWidth= Math.floor(this.appwidth*58.3/100)-20;
+				document.getElementById('branchStats_ALL_'+this.pbsid).style.width=divWidth+'px';
 				this.init();
 				this.interval = setInterval(() => this.init(), 5000);
 			},
@@ -242,6 +245,7 @@ a {
 					activeIndex: '1',
 					projects: [],
 					appheight: '600px',
+					appwidth: 0,
 					interval: null,
 				}
 			},
@@ -272,10 +276,23 @@ a {
 			    		winHeight = document.documentElement.clientHeight; 
 			    	this.appheight = winHeight+'px';
 		    	},
+		    	getWinWidth(){
+			    	var winWidth = null;
+			    	//获取窗口高度 
+			    	if (window.innerWidth) 
+			    		winWidth = window.innerWidth; 
+			    	else if ((document.body) && (document.body.clientWidth)) 
+			    		winWidth = document.body.clientWidth; 
+			    	//通过深入Document内部对body进行检测，获取窗口大小 
+			    	if (document.documentElement && document.documentElement.clientWidth) 
+			    		winWidth = document.documentElement.clientWidth; 
+			    	this.appwidth = winWidth;
+		    	},
 		    }, 
 		    mounted () {
 			   console.log("init");
 			   this.getWinheight();
+			   this.getWinWidth();
 			   this.getProject();
 			   this.interval = setInterval(() => this.getProject(), 5000);
 		    },
