@@ -126,8 +126,6 @@ public class AsyncTask {
 					}
 					pageNum++;
 				}
-				
-				
 			}
 		} catch (Exception e) {
 			logger.info("初始化失败:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
