@@ -26,12 +26,10 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.Fields;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
-import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import com.alibaba.fastjson.JSON;
 import com.dataman.gitstats.param.AddProjectParam;
 import com.dataman.gitstats.po.CommitStatsPo;
 import com.dataman.gitstats.po.ProjectBranchStats;
@@ -43,8 +41,6 @@ import com.dataman.gitstats.vo.CommitStatsVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsPlusVo;
 import com.dataman.gitstats.vo.ProjectBranchStatsVo;
 import com.dataman.gitstats.vo.StatsByUserByDayVo;
-import com.mongodb.AggregationOutput;
-import com.mongodb.DBObject;
 
 @Service
 public class ProjectBranchService {
@@ -137,13 +133,45 @@ public class ProjectBranchService {
 		return projectBranchStatsRepository.findByWeburlAndBranch(weburl,branch);
 	}
 
-	public List<ProjectBranchStats> getAllProjectBranchStats(){
-		return projectBranchStatsRepository.findAll();
+	public List<ProjectBranchStats> getAllProjectBranchStats(String limit){
+		if (StringUtils.isEmpty(limit)) {
+			return projectBranchStatsRepository.findAll();
+		}else{
+			return projectBranchStatsRepository.findByStatus(1);
+		}
+		
 	}
 
 	public void deleteProjectBranchStats(String id){
 		projectBranchStatsRepository.delete(id);
 		commitStatsRepository.deleteByBranchId(id);
+	}
+
+	/**
+	 * @method: resetProjectBranchStats
+	 * @Description	重置项目，清空数据并重新初始化
+	 * @author biancl
+	 * @date 2017-10-15 10:17
+	 * @param [id]
+	 * @return void
+	 */
+	public void resetProjectBranchStats(String id) throws GitLabApiException {
+
+		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(id);
+		commitStatsRepository.deleteByBranchId(id);//删除已同步的commit
+		pbs.setStatus(0);
+		projectBranchStatsRepository.save(pbs);
+
+		asyncTask.initProjectStats(pbs);
+	}
+	/**
+	 * @method getProAllAuthorName(获取项目所有提交者)
+	 * @return String[]
+	 * @author liuqing
+	 * @date 2017年10月18日 下午4:42:06
+	 */
+	public List<CommitStatsVo> getProAllAuthorName(String id){
+		return proGroupByAuthorName(id);
 	}
 
 	public void modifyProjectBranchStats(AddProjectParam param) throws Exception{
@@ -264,7 +292,6 @@ public class ProjectBranchService {
 //	,{$project : {_id :0, authorName : '$_id.authorName', dayinfo : {day : '$_id.day', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
 //	,{$group:{_id:"$authorName", days:{$push:"$dayinfo"}, addrow: {$sum: "$dayinfo.addRow"},removeRow: {$sum: "$dayinfo.removeRow"},commit: {$sum: "$dayinfo.commit"}}}
 //	,{$sort : { addrow : -1 }}
-//	,{ $limit : 8 }
 //	])
 	public List<StatsByUserByDayVo> statsByUserByDay(ProjectBranchStats pbs,String dataformat,MatchOperation match){
 		List<StatsByUserByDayVo> list=null;
@@ -280,8 +307,7 @@ public class ProjectBranchService {
 				Aggregation.group(Fields.fields("authorName")).sum("dayinfo.addrow").as("addrow")
 					.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit")
 					.push("dayinfo").as("data"),
-				Aggregation.sort(Direction.DESC, "addrow"),
-				Aggregation.limit(8l)
+				Aggregation.sort(Direction.DESC, "addrow")
 			);
 		System.out.println(agg.toString());
 		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
@@ -349,6 +375,19 @@ public class ProjectBranchService {
 		return list;
 	}
 	
+//	db.getCollection('commitStatsPo').aggregate([
+//	    {$group:{_id:'$authorName'}}
+//	])
+	public List<CommitStatsVo> proGroupByAuthorName(String id){
+		List<CommitStatsVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+				Aggregation.match(new Criteria("branchId").is(id)),
+				Aggregation.group(Fields.fields("authorName"))
+		);
+		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list =ret.getMappedResults();
+		return list;
+	}
 	
 	
 	/**

@@ -1,7 +1,6 @@
 package com.dataman.gitstats;
 
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -30,7 +29,7 @@ public class GitLabApiTest {
 		Project p=null;
 		Pager<Commit> page=null;
 		try {
-			api = GitLabApi.login(ApiVersion.V4, "http://192.168.199.32:8004", "root", "12345678");
+			api = GitLabApi.login(ApiVersion.V3, "http://192.168.199.32:8004", "root", "12345678");
 			p= api.getProjectApi().getProject(4);
 			System.out.println(JSON.toJSONString(p));
 			page= api.getCommitsApi().getCommits(4, "master", null, new Date(),100);

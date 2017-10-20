@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import com.dataman.gitstats.annotation.AuthRequired;
+import org.gitlab4j.api.GitLabApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 
@@ -34,10 +35,10 @@ public class ProjectController extends BaseController {
 
 	@RequestMapping(value = "/",method = RequestMethod.GET)
 	@ApiOperation(value = "获取所有统计项目")
-	public Object getAll(){
+	public Object getAll(@RequestParam(required = false) @ApiParam(name = "limit", value = "是否过滤未初始化") String limit){
 		json.clear();
 		try {
-			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats());
+			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats(limit));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -53,6 +54,17 @@ public class ProjectController extends BaseController {
 			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId){
 		json.clear();
 		projectBranchService.deleteProjectBranchStats(branchId);
+		setJson(SUCCESS_CODE);
+		return json;
+	}
+	@AuthRequired
+	@RequestMapping(value = "/{branchId}",method = RequestMethod.PUT)
+	@ApiOperation(value = "重新初始化项目")
+	public Object reset(
+			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
+			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId) throws GitLabApiException {
+		json.clear();
+		projectBranchService.resetProjectBranchStats(branchId);
 		setJson(SUCCESS_CODE);
 		return json;
 	}
@@ -161,4 +173,19 @@ public class ProjectController extends BaseController {
 		}
 		return json;
 	}
+	
+	@RequestMapping(value="/projectBranchStats/{id}/users",method=RequestMethod.GET)
+	@ApiOperation(value = "获取项目所有提交者")
+	public Object showProjectBranchByDayAndUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+		json.clear();
+		try {
+			setJson(SUCCESS_CODE, projectBranchService.getProAllAuthorName(id));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			setJson(FAIL_CODE, e.getMessage());
+		}
+		return json;
+	}
+	
 }

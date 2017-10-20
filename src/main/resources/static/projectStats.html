@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GITSTATS</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin:0;
+}
+a {
+	text-decoration: none;
+}
+#app {
+	width: 100%;
+    max-width: 100%;
+    overflow: -webkit-paged-x;
+    overflow-x: hidden;
+}
+#menudiv {
+	background-color: #324157;
+	margin-bottom: 10px;
+}
+.userDiv .total{
+	font-size: 12px;
+}
+.userDiv .Danger{
+	color:#FF4949;
+}
+.userDiv .Silver{
+	color:#8492A6;
+}
+
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24">
+		<div class="grid-content bg-purple-dark" id="menudiv">
+			<el-row :gutter="20">
+				<el-col :span="16" :offset="4">
+				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
+					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item> 
+					<el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item>
+				</el-menu>
+				</el-col>
+			</el-row>
+		</div>
+		
+		<el-row :gutter="20">
+			<el-col :span="22" :offset="1">
+				<template>
+				  <el-tabs>
+				    <el-tab-pane label="提交记录" >
+				    	<el-form :inline="true" :model="formInline" class="demo-form-inline">
+						  <el-form-item label="提交人" >
+						    <el-select v-model="formInline.authorName" clearable filterable placeholder="提交人">
+						      <el-option v-for="item in users" :key="item._id" :label="item._id" :value="item._id"> </el-option>
+						    </el-select>
+						  </el-form-item>
+						  <el-form-item label="时间范围">
+						    <el-date-picker v-model="formInline.dates" type="daterange" format="yyyy/MM/dd" placeholder="选择时间范围"> 
+						    </el-date-picker>
+						  </el-form-item>
+						  <el-form-item>
+						    <el-button type="primary" @click="onSubmit">查询</el-button>
+						  </el-form-item>
+						</el-form>
+						
+						<el-table :data="commitPage.content" style="width: 100%" >
+							<el-table-column prop="authorName" label="提交人" width="150"> </el-table-column>
+							<el-table-column prop="createdAt" label="提交时间" width="180"> 
+								<template scope="scope">
+						          {{new Date(scope.row.createdAt).Format('yyyy/MM/dd hh:mm:ss')}}
+						        </template>
+							</el-table-column>
+							<el-table-column prop="addRow" label="添加行数" width="100"> </el-table-column>
+							<el-table-column prop="removeRow" label="删除行数" width="100"> </el-table-column>
+							<el-table-column prop="message" label="记录" > </el-table-column>
+						</el-table>
+						
+						<el-pagination  @current-change="handleCurrentChange" :current-page.sync="commitPage.number" 
+							:page-size="commitPage.size" layout="total, prev, pager, next" 
+							:total="commitPage.totalElements"> 
+						</el-pagination>
+						
+				    </el-tab-pane>
+				    <el-tab-pane label="用户统计" >
+				    	<el-form :inline="true" :model="formInline2" class="demo-form-inline">
+						  <el-form-item label="最近" >
+						    <el-select v-model="formInline2.lastDate" clearable placeholder="" style="width:100px">
+						      <el-option v-for="item in 30" :key="item" :label="item" :value="item"></el-option>
+						    </el-select>
+						    <el-select v-model="formInline2.dateformat" clearable placeholder="" style="width:100px">
+						      <el-option label="日" value="YMD"></el-option>
+						      <el-option label="周" value="YW"></el-option>
+						      <el-option label="月" value="YM"></el-option>
+						    </el-select>
+						  </el-form-item>
+						  <el-form-item>
+						    <el-button type="primary" @click="onSubmit2">查询</el-button>
+						  </el-form-item>
+						</el-form>
+						
+						<el-row :gutter="20">
+						  <el-col :span="8" v-for="user in userStats" >
+						  	<div class="userDiv" >
+						  		<h3>{{user._id}}</h3>
+						  		<p class="total">提交次数：{{user.commit}} <span class="Danger">提交代码：{{user.addrow}}</span> <span class="Silver">删除代码：{{user.removerow}}</span></p>
+						  		<userstats :user="user"></userstats>
+						  	</div>
+						  </el-col>
+						  
+						</el-row>
+						
+				    </el-tab-pane>
+				  </el-tabs>
+				</template>
+			
+			</el-col>
+		</el-row>
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<!-- <script src="js/echarts.min.js"></script> -->
+	<script src="https://unpkg.com/echarts@3.7.2/dist/echarts.min.js"></script>
+	
+	<script type="text/x-template" id="userStats-template">
+		<div class="userStatsDive" :id="encodeURI(user._id)" style="width:398px;height:200px;"></div>
+	</script>
+	
+	<script>
+		Date.prototype.Format = function (fmt) {
+		    var o = {
+		        "M+": this.getMonth() + 1, //月份 
+		        "d+": this.getDate(), //日 
+		        "h+": this.getHours(), //小时 
+		        "m+": this.getMinutes(), //分 
+		        "s+": this.getSeconds(), //秒 
+		        "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+		        "S": this.getMilliseconds() //毫秒 
+		    };
+		    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+		    for (var k in o)
+		    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+		    return fmt;
+		}
+		function GetQueryString(name){
+		     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+		     var r = window.location.search.substr(1).match(reg);
+		     if(r!=null)return  unescape(r[2]); return null;
+		}
+		Vue.component('userstats', {
+			props: {
+				user: null,
+			},
+			template: "#userStats-template",
+			mounted(){
+				console.log("init "+this.user._id);
+				var divId=encodeURI(this.user._id);
+				
+				var fillwidth = Math.floor(window.innerWidth*91.6/100*33.3/100)-20;
+				document.getElementById(divId).style.width=fillwidth+"px";
+	    		// console.log(document.getElementById(divId));
+	    		// var fillwidth= document.getElementById(divId).parentNode.offsetWidth;
+	    		// document.getElementById(divId).style.width=fillwidth+"px";
+	    		var myChart = echarts.init(document.getElementById(divId));
+	    		var days=[],addrows=[],removerows=[],commits=[];
+				for(var i in this.user.data){
+					days.push(this.user.data[i]._id);
+					addrows.push(this.user.data[i].addrow);
+					removerows.push(this.user.data[i].removerow);
+					commits.push(this.user.data[i].commit);
+				}
+				var option = {
+						legend: { data:['添加行数','删除行数']},
+			            xAxis: { data: days },
+			            yAxis: {  },
+			            series: [{ name: '添加行数', type: 'line', data: addrows }
+			            	,{ name: '删除行数', type: 'line', data: removerows }]
+			        };
+				myChart.setOption(option);
+			},
+			beforeDestroy: function () {
+				console.log("Destroy "+this.user._id);
+			}
+		});
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '2',
+					pId: GetQueryString("pId"),
+					users:[],
+					commitPage:{
+						totalPages:0,
+						content:[],
+						totalElements:0,
+						number:0,
+						size:20,
+						sort:null
+					},
+					userStats:[],
+					formInline: {
+						authorName: '',
+						dates: ''
+				    },
+				    formInline2: {
+				    	lastDate: '',
+				    	dateformat: ''
+				    },
+				}
+			},
+		    methods: {
+		    	onSubmit(){
+		    		var param ="?1=1";
+		    		if(this.formInline.authorName){
+		    			param=param+"&authorName="+this.formInline.authorName;
+		    		}
+		    		if(this.formInline.dates&&this.formInline.dates[0]&&this.formInline.dates[1]){
+		    			var begin = this.formInline.dates[0].Format("yyyy/MM/dd");
+		    			var end = this.formInline.dates[1].Format("yyyy/MM/dd");
+		    			param=param+"&begin="+begin+"&end="+end;
+		    		}
+		    		this.getCommitPage(param);
+		    	},
+		    	onSubmit2(){
+		    		var param ="?1=1";
+		    		if(this.formInline2.lastDate){
+		    			param=param+"&lastDate="+this.formInline2.lastDate;
+		    		}
+		    		if(this.formInline2.dateformat){
+		    			param=param+"&dateformat="+this.formInline2.dateformat;
+		    		}
+		    		this.getUserStats(param);
+		    	},
+		    	getUsers(){
+		    		var self=this;
+					axios.get('/project/projectBranchStats/'+self.pId+'/users').then(function (response) {
+		    			self.users = response.data.data;
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取ProjectUsers异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	},
+		    	getCommitPage(param){
+		    		var self=this;
+		    		axios.get('/commit/'+self.pId+param).then(function (response) {
+		    			self.commitPage = response.data.data;
+		    			self.commitPage.number++;
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取commit异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	},
+		    	getUserStats(param){
+		    		var self=this;
+		    		self.userStats=[];
+		    		axios.get('/project/projectBranchStats/'+self.pId+"/byUserAndDay"+param).then(function (response) {
+		    			self.userStats = response.data.data.data;
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取userStats异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	},
+		    	handleCurrentChange(pageNum){
+		    		var param ="?pageNum="+(pageNum-1);
+		    		if(this.formInline.authorName){
+		    			param=param+"&authorName="+this.formInline.authorName;
+		    		}
+		    		if(this.formInline.dates&&this.formInline.dates[0]&&this.formInline.dates[1]){
+		    			var begin = this.formInline.dates[0].Format("yyyy/MM/dd");
+		    			var end = this.formInline.dates[1].Format("yyyy/MM/dd");
+		    			param=param+"&begin="+begin+"&end="+end;
+		    		}
+		    		this.getCommitPage(param);
+		    	},
+		    }, 
+		    mounted () {
+		       this.getUsers();
+		       this.getCommitPage("?pageNum=0");
+		       this.getUserStats("?1=1");
+			   console.log("int");
+		    }
+		})
+	</script>
+</body>
+</html>
