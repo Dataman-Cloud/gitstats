@@ -10,14 +10,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.ProjectHook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort.Direction;
@@ -44,7 +43,7 @@ import com.dataman.gitstats.vo.StatsByUserByDayVo;
 
 @Service
 public class ProjectBranchService {
-	
+	protected Logger logger = LoggerFactory.getLogger(this.getClass());
 	@Autowired
 	ProjectBranchStatsRepository projectBranchStatsRepository;
 	@Autowired
@@ -58,9 +57,6 @@ public class ProjectBranchService {
 
 	@Autowired
 	GitlabUtil gitlabUtil;
-
-	@Autowired
-	private CommonService commonService;
 
 	@Autowired
 	private WebHookService webHookService;
@@ -78,7 +74,7 @@ public class ProjectBranchService {
 	 * @throws Exception 
 	 * @date 2017年9月19日 下午3:12:39
 	 */
-	public int addProject(AddProjectParam param,HttpServletRequest request) throws Exception{
+	public int addProject(AddProjectParam param,String webHookUrl) throws Exception{
 		int SUCCESS=0,EXISTED=1,NOTEXIST=2;
 		Calendar cal=Calendar.getInstance();
 		//验证是否 存在于 gitlab
@@ -93,21 +89,27 @@ public class ProjectBranchService {
 		}
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(project.getWebUrl()+"_"+param.getProid()+"_"+param.getBranch());
 		if(pbs==null){
-			pbs=new ProjectBranchStats();
-			ClassUitl.copyProperties(param,pbs);
-			pbs.setProjectNameWithNamespace(project.getNameWithNamespace());
-			pbs.setWeburl(project.getWebUrl());
-			pbs.setStatus(0);
-			pbs.setTotalAddRow(0);
-			pbs.setTotalDelRow(0);
-			pbs.setTotalRow(0);
-			pbs.setCreatedAt(project.getCreatedAt());
-			pbs.setCreatedate(cal.getTime());
-			pbs.setLastupdate(cal.getTime());
-			projectBranchStatsRepository.insert(pbs);
-			asyncTask.initProjectStats(pbs);
-			String webHookUrl=commonService.getHookListenerPath(request);
-			webHookService.addGitlabPushEventWebHook(pbs,webHookUrl);
+			try{
+				pbs=new ProjectBranchStats();
+				ClassUitl.copyProperties(param,pbs);
+				pbs.setProjectNameWithNamespace(project.getNameWithNamespace());
+				pbs.setWeburl(project.getWebUrl());
+				pbs.setStatus(0);
+				pbs.setTotalAddRow(0);
+				pbs.setTotalDelRow(0);
+				pbs.setTotalRow(0);
+				pbs.setCreatedAt(project.getCreatedAt());
+				pbs.setCreatedate(cal.getTime());
+				pbs.setLastupdate(cal.getTime());
+				projectBranchStatsRepository.insert(pbs);
+				asyncTask.initProjectStats(pbs);
+				if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid())){
+					webHookService.addGitlabPushEventWebHook(pbs,webHookUrl);
+				}
+			}catch (Exception e){
+				logger.error("初始化项目分支异常：",e);
+			}
+
 		}else{
 			return EXISTED;
 		}
@@ -155,14 +157,22 @@ public class ProjectBranchService {
 	 * @param [id]
 	 * @return void
 	 */
-	public void resetProjectBranchStats(String id) throws GitLabApiException {
-
+	public void resetProjectBranchStats(String id,String webHookUrl) throws Exception {
 		ProjectBranchStats pbs=projectBranchStatsRepository.findOne(id);
-		commitStatsRepository.deleteByBranchId(id);//删除已同步的commit
-		pbs.setStatus(0);
-		projectBranchStatsRepository.save(pbs);
+		try{
+			commitStatsRepository.deleteByBranchId(id);//删除已同步的commit
+			pbs.setStatus(0);
+			projectBranchStatsRepository.save(pbs);
+			asyncTask.initProjectStats(pbs);
+			if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid())){
+				webHookService.addGitlabPushEventWebHook(pbs,webHookUrl);
+			}
+		}catch (Exception e){
+			logger.error("重置项目分支异常：",e);
+			pbs.setStatus(-1);
+			projectBranchStatsRepository.save(pbs);
+		}
 
-		asyncTask.initProjectStats(pbs);
 	}
 	/**
 	 * @method getProAllAuthorName(获取项目所有提交者)

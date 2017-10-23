@@ -157,6 +157,6 @@ public class ProjectBranchStats {
 	}
 
 	public String getShowStatus(){
-		return this.status==0?"正在初始化":"初始化完成";
+		return this.status==0?"正在初始化":this.status==-1?"初始化出错":"初始化完成";
 	}
 }

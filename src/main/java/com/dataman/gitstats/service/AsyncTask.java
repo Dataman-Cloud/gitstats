@@ -129,8 +129,9 @@ public class AsyncTask {
 			}
 		} catch (Exception e) {
 			logger.info("初始化失败:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
-			logger.info("失败原因:"+e.getMessage());
-			e.printStackTrace();
+			logger.error("失败原因:",e);
+			pbs.setStatus(-1);
+			projectBranchStatsRepository.save(pbs);
 		}
 		return new AsyncResult<String>("初始化完成");  
 	}

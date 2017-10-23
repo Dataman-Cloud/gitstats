@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import com.dataman.gitstats.annotation.AuthRequired;
+import com.dataman.gitstats.service.CommonService;
 import org.gitlab4j.api.GitLabApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
@@ -32,6 +33,9 @@ public class ProjectController extends BaseController {
 	
 	@Autowired
 	ProjectBranchService projectBranchService;
+
+	@Autowired
+	private CommonService commonService;
 
 	@RequestMapping(value = "/",method = RequestMethod.GET)
 	@ApiOperation(value = "获取所有统计项目")
@@ -62,9 +66,11 @@ public class ProjectController extends BaseController {
 	@ApiOperation(value = "重新初始化项目")
 	public Object reset(
 			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
-			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId) throws GitLabApiException {
+			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId,
+			HttpServletRequest request) throws Exception {
 		json.clear();
-		projectBranchService.resetProjectBranchStats(branchId);
+		String webhookUrl=commonService.getHookListenerPath(request);
+		projectBranchService.resetProjectBranchStats(branchId,webhookUrl);
 		setJson(SUCCESS_CODE);
 		return json;
 	}
@@ -73,24 +79,20 @@ public class ProjectController extends BaseController {
 	@ApiOperation(value = "添加需要统计的项目")
 	public Object add(
 			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
-			@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request){
+			@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request) throws Exception{
 		json.clear();
 		if(bingingresult.hasErrors()){
 			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
 			return json;
 		}
-		try {
 			if(param.getId()==null){
-				setJson(SUCCESS_CODE, projectBranchService.addProject(param,request));
+				String webhookUrl=commonService.getHookListenerPath(request);
+				setJson(SUCCESS_CODE, projectBranchService.addProject(param, webhookUrl));
 			}else{
 				setJson(SUCCESS_CODE);
 				projectBranchService.modifyProjectBranchStats(param);
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
-		}
+
 		return json;
 	}
 
