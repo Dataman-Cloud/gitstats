@@ -105,7 +105,7 @@ a {
 						</el-form>
 						
 						<el-row :gutter="20">
-						  <el-col :span="8" v-for="user in userStats" :key="user._id">
+						  <el-col :span="8" v-for="user in userStats" >
 						  	<div class="userDiv" >
 						  		<h3>{{user._id}}</h3>
 						  		<p class="total">提交次数：{{user.commit}} <span class="Danger">提交代码：{{user.addrow}}</span> <span class="Silver">删除代码：{{user.removerow}}</span></p>
@@ -132,7 +132,7 @@ a {
 	<script src="https://unpkg.com/echarts@3.7.2/dist/echarts.min.js"></script>
 	
 	<script type="text/x-template" id="userStats-template">
-		<div class="userStatsDive" :id="encodeURI(user._id)" style="width:380px;height:200px;"></div>
+		<div class="userStatsDive" :id="encodeURI(user._id)" style="width:398px;height:200px;"></div>
 	</script>
 	
 	<script>
@@ -162,8 +162,14 @@ a {
 			},
 			template: "#userStats-template",
 			mounted(){
+				console.log("init "+this.user._id);
 				var divId=encodeURI(this.user._id);
-	    		console.log(document.getElementById(divId));
+				
+				var fillwidth = Math.floor(window.innerWidth*91.6/100*33.3/100)-20;
+				document.getElementById(divId).style.width=fillwidth+"px";
+	    		// console.log(document.getElementById(divId));
+	    		// var fillwidth= document.getElementById(divId).parentNode.offsetWidth;
+	    		// document.getElementById(divId).style.width=fillwidth+"px";
 	    		var myChart = echarts.init(document.getElementById(divId));
 	    		var days=[],addrows=[],removerows=[],commits=[];
 				for(var i in this.user.data){
@@ -173,13 +179,16 @@ a {
 					commits.push(this.user.data[i].commit);
 				}
 				var option = {
-						legend: { data:['添加行数','删除行数'], right: 0},
+						legend: { data:['添加行数','删除行数']},
 			            xAxis: { data: days },
-			            yAxis: {},
+			            yAxis: {  },
 			            series: [{ name: '添加行数', type: 'line', data: addrows }
 			            	,{ name: '删除行数', type: 'line', data: removerows }]
 			        };
 				myChart.setOption(option);
+			},
+			beforeDestroy: function () {
+				console.log("Destroy "+this.user._id);
 			}
 		});
 		new Vue({
@@ -258,9 +267,9 @@ a {
 		    	},
 		    	getUserStats(param){
 		    		var self=this;
+		    		self.userStats=[];
 		    		axios.get('/project/projectBranchStats/'+self.pId+"/byUserAndDay"+param).then(function (response) {
 		    			self.userStats = response.data.data.data;
-		    			
 		    		}).catch(function (error) {
 		    			console.log(error);
 		        		self.$notify.error({
