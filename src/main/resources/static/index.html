@@ -62,7 +62,7 @@ a {
 
 	<div id="app">
 		<el-row> <el-col :span="24"> 
-		<el-carousel :height="appheight"> 
+		<el-carousel :height="appheight" interval="15000">
 			<el-carousel-item v-for="pro in projects">
 				<h1>{{ pro.viewName }}</h1>
 				<projectstats :pbsid="pro.id" :appwidth="appwidth">
@@ -92,11 +92,11 @@ a {
 								<dd>{{totalRow}}</dd>
 							</dl>
 							<dl>
-								<dt>总代添加量</dt>
+								<dt>总添加量</dt>
 								<dd>{{totalAddRow}}</dd>
 							</dl>
 							<dl>
-								<dt>总代删除量</dt>
+								<dt>总删除量</dt>
 								<dd>{{totalDelRow}}</dd>
 							</dl>
 						</div>
@@ -231,7 +231,7 @@ a {
 				var divWidth= Math.floor(this.appwidth*58.3/100)-20;
 				document.getElementById('branchStats_ALL_'+this.pbsid).style.width=divWidth+'px';
 				this.init();
-				this.interval = setInterval(() => this.init(), 5000);
+				this.interval = setInterval(() => this.init(), 15000);
 			},
 		    beforeDestroy: function () {
 			    clearInterval(this.interval);
@@ -294,7 +294,7 @@ a {
 			   this.getWinheight();
 			   this.getWinWidth();
 			   this.getProject();
-			   this.interval = setInterval(() => this.getProject(), 5000);
+			   this.interval = setInterval(() => this.getProject(), 15000);
 		    },
 		    beforeDestroy: function () {
 		       clearInterval(this.interval);

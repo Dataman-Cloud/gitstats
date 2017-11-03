@@ -12,20 +12,24 @@ public class BaseController {
 	protected static String FAIL_CODE="01";
 	protected static String PARAMERR_CODE="02";
 	
-	public Map<String, Object> json = new HashMap<String, Object>(4);
-	
-	public void setJson(String resultCode, Object object) {
-		this.json.put("resultCode", resultCode);
-		this.json.put("data", object);
+	public Map<String, Object> setJson(String resultCode, Object object) {
+		Map<String, Object> json = new HashMap<String, Object>(4);
+		json.put("resultCode", resultCode);
+		json.put("data", object);
+		return json;
 	}
 
 
-	public void setJson(String resultCode) {
-		this.json.put("resultCode", resultCode);
+	public Map<String, Object> setJson(String resultCode) {
+		Map<String, Object> json = new HashMap<String, Object>(4);
+		json.put("resultCode", resultCode);
+		return json;
 	}
 	
 	
-	public void setJson(Object object) {
-		this.json.put("data", object);
+	public Map<String, Object> setJson(Object object) {
+		Map<String, Object> json = new HashMap<String, Object>(4);
+		json.put("data", object);
+		return json;
 	}
 }

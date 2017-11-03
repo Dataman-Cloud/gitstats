@@ -122,7 +122,7 @@ public class ProjectBranchService {
 		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(aid);
 		List<ProjectHook> hooks= gitLabApi.getProjectApi().getHooks(pid);
 		if(!hooks.isEmpty()){
-			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf("/webHook/receive")>0).findFirst().isPresent();	
+			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf("/webHook/listener")>0).findFirst().isPresent();
 		}
 		return flag;
 	}
@@ -184,13 +184,20 @@ public class ProjectBranchService {
 		return proGroupByAuthorName(id);
 	}
 
-	public void modifyProjectBranchStats(AddProjectParam param) throws Exception{
+	public void modifyProjectBranchStats(AddProjectParam param,String webHookUrl) throws Exception{
 		ProjectBranchStats projectBranchStats=projectBranchStatsRepository.findOne(param.getId());
 		if(param.getId()==null || projectBranchStats==null){
 			throw new Exception("参数错误");
 		}
-		ClassUitl.copyProperties(param,projectBranchStats);
-		projectBranchStatsRepository.save(projectBranchStats);
+		if(projectBranchStats.getAccountid().equals(param.getAccountid())&&param.getProid()==projectBranchStats.getProid()&&param.getBranch().equals(projectBranchStats.getBranch())){
+			ClassUitl.copyProperties(param,projectBranchStats);
+			projectBranchStats.setLastupdate(new Date());
+			projectBranchStatsRepository.save(projectBranchStats);
+		}else{
+			deleteProjectBranchStats(param.getId());
+			addProject(param,webHookUrl);
+		}
+
 	}
 
 //	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){

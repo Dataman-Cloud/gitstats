@@ -26,10 +26,10 @@ public class LoginController extends BaseController{
     @RequestMapping(value = "/login",method = RequestMethod.POST)
     @ApiOperation(value = "登录")
     public Object login(@RequestBody User user) throws Exception {
-        json.clear();
+
         User loginUser=loginService.login(user.getUsername(), user.getPassword());
-        setJson(SUCCESS_CODE,loginUser.getToken());
-        return json;
+        return  setJson(SUCCESS_CODE,loginUser.getToken());
+
     }
 
     @RequestMapping(value = "/logout",method = RequestMethod.POST)
@@ -37,11 +37,11 @@ public class LoginController extends BaseController{
     @AuthRequired
     public Object logout(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
             HttpServletRequest request) throws Exception {
-        json.clear();
+
         User user= (User) request.getAttribute("user");
         loginService.logout(user);
-        setJson(SUCCESS_CODE);
-        return json;
+        return  setJson(SUCCESS_CODE);
+
     }
 
 

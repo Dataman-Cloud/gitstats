@@ -213,6 +213,9 @@
                                     title: '添加统计项目失败',
                                     message: error.response.data.data || error.message
                                 });
+                                    if(error.response.status=='401'){
+                                        window.location.href='admin.html';
+                                    }
                                 self.$refs.addForm.resetFields();
                             });
 	                    }
@@ -251,6 +254,9 @@
                      title: '删除统计项目失败',
                      message: error.response.data.data || error.message
                    });
+    if(error.response.status=='401'){
+        window.location.href='admin.html';
+    }
             	   });
             })},
             reset(projectId){
@@ -274,6 +280,9 @@
                     		title: '初始化项目失败',
                     		message: error.response.data.data || error.message
                 			});
+                        if(error.response.status=='401'){
+                            window.location.href='admin.html';
+                        }
             		});
             })},
             closeDialog(){

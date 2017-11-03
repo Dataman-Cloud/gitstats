@@ -33,8 +33,7 @@ public class CommitController extends BaseController {
 			@RequestParam(required = false) @ApiParam(name = "end", value = "时间范围",defaultValue = "2099/01/01") Date end,
 			@RequestParam(required = false, defaultValue = "0") @ApiParam(name = "pageNum", value = "页码") Integer pageNum,
 			@RequestParam(required = false, defaultValue = "20") @ApiParam(name = "pageSize", value = "页大小") Integer pageSize){
-		json.clear();
-		try {
+		
 			Calendar cal= Calendar.getInstance();
 			if(null == begin){
 				cal.set(2010, 1, 1);
@@ -44,12 +43,7 @@ public class CommitController extends BaseController {
 				cal.set(2099, 1, 1);
 				end=cal.getTime();
 			}
-			setJson(SUCCESS_CODE,commitStatsService.find(pbid, authorName,begin, end, pageSize, pageNum));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
-		}
-		return json;
+			return setJson(SUCCESS_CODE,commitStatsService.find(pbid, authorName,begin, end, pageSize, pageNum));
+
 	}
 }
