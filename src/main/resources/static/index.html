@@ -150,7 +150,7 @@ a {
 			<el-row :gutter="20">
   				<el-col :span="11" :offset="1">
 						<div :id="getAllId(pbsid)" :style="'width:'+appwidth*587/1237+'px;height:'+appheight*370/623+'px;border-radius: 8px;'" class="myChart"></div>
-						<div  style="position:absolute;width:200px;top:20px;right:50%;z-index: 10;" >
+						<div  style="position:absolute;width:200px;top:20px;right:47%;z-index: 10;" >
 							<el-row>
 								<el-col :span="22" :offset="1">
 									<el-radio-group v-model="unit" >
@@ -335,7 +335,7 @@ a {
 							},
 								padding:0,
 								top:20,
-								left:65
+								left:45
 							},
 				            // tooltip: {},
 				            legend: { data:['添加行数','删除行数'], left: 'center',bottom:'10',textStyle:{
@@ -403,7 +403,7 @@ a {
 							color:parseInt(this.currentidx%2)==0?['#ed7200','#ee45bd']:["#0585ff","#2dc35c"],
 						graphic:[{
 								type: 'image',
-								left:40,
+								left:20,
 								top:20,
 								style: {
 									image:parseInt(this.currentidx%2)==0?'http://localhost:8081/img/stats-white.svg':'http://localhost:8081/img/stats-black.svg',
