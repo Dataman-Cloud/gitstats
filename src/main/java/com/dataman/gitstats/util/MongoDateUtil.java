@@ -19,6 +19,7 @@ public class MongoDateUtil {
 	public static String YYYYMMDD = "%Y-%m-%d";
 	public static String YYYYMM = "%Y-%m";
 	public static String YYYYW ="%Y-%U";
+	public static String YYYY ="%Y";
 	/**
 	 * @method getFormat(获取时间的格式 分组需要使用)
 	 * @return String
@@ -40,6 +41,9 @@ public class MongoDateUtil {
 			case "YW":
 				ret=YYYYW;
 			break;
+			case "Y":
+				ret=YYYY;
+				break;
 			default:
 				ret=YYYYMMDD;
 			break;
@@ -76,6 +80,9 @@ public class MongoDateUtil {
 					case "YW":
 						cal.add(Calendar.WEEK_OF_YEAR, -lastDate);
 					break;
+					case "Y":
+						cal.add(Calendar.YEAR, -lastDate);
+						break;
 					default:
 						cal.add(Calendar.DAY_OF_YEAR, -lastDate);
 					break;

@@ -157,7 +157,7 @@ a {
 										<el-radio-button label="YMD" :class="'switchUnit'+parseInt(currentidx%2)">日</el-radio-button>
 										<el-radio-button label="YW">周</el-radio-button>
 										<el-radio-button label="YM">月</el-radio-button>
-										<el-radio-button label="YQ">季</el-radio-button>
+										<el-radio-button label="Y">年</el-radio-button>
 									</el-radio-group>
 								</el-col>
 							</el-row>
@@ -263,10 +263,8 @@ a {
 			},
 			watch: {
 				unit: function(newUnit){
-					console.log('******************before update this.unit='+this.unit);
 					this.unit=newUnit;
 					this.getStatsData();
-					console.log('**********************after update this.unit='+this.unit);
 				}
 			},
 			methods: {
