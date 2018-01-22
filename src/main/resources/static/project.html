@@ -115,7 +115,7 @@
 				</el-form-item>
 -->
 				<el-form-item>
-					<el-button type="primary" @click="add">提交</el-button>
+					<el-button type="primary" @click="add" :disabled="editDisabled" >提交</el-button>
 					<el-button @click="closeDialog">取消</el-button>
 				</el-form-item>
 
@@ -146,7 +146,8 @@
                     projectNameWithNamespace:null,
                     viewName:null,
                     dateformat:null,
-                    lastDate:null
+                    lastDate:null,
+
                 },
 				dateformats:[{ value: 'YMD', label: '日' }, 
 						{ value: 'YW', label: '周' }, 
@@ -161,7 +162,8 @@
                 projects: [],
                 activeIndex: "2",
                 showDialog: false,
-                emptyText:"暂无数据"
+                emptyText:"暂无数据",
+                editDisabled:false
             }
         },
         methods: {
@@ -190,6 +192,7 @@
                 console.log(this.$refs.addForm);
                 self.$refs.addForm.validate((valid) => {
                     if(valid){
+                        self.editDisabled=true;
                         axios.post(baseUrl + '/project/', self.gitlab_project,{"headers":{"token":localStorage.getItem("token")}})
                             .then(function (response) {
                                 console.log(response);
@@ -207,6 +210,7 @@
                                         message: response.data.data
                                     });
                                 }
+                                    self.editDisabled=false;
                             }).catch(function (error) {
                                 console.log("******************error" + error);
                                 self.$notify.error({
@@ -217,6 +221,7 @@
                                         window.location.href='admin.html';
                                     }
                                 self.$refs.addForm.resetFields();
+                                    self.editDisabled=false;
                             });
 	                    }
 	                }
