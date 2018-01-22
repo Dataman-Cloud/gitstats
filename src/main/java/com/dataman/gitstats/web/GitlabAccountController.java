@@ -43,8 +43,7 @@ public class GitlabAccountController extends BaseController{
 				return  setJson(FAIL_CODE, "未知错误");
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("添加gitlab账号异常：",e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -57,8 +56,7 @@ public class GitlabAccountController extends BaseController{
 		try {
 			return  setJson(SUCCESS_CODE, gitlabAccountService.getAll());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("获取gitlab账号异常：", e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -72,8 +70,7 @@ public class GitlabAccountController extends BaseController{
 		try {
 			return  setJson(SUCCESS_CODE, gitlabAccountService.delAccount(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("删除gitlab账号异常：",e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 

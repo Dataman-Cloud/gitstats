@@ -44,8 +44,7 @@ public class ProjectController extends BaseController {
 		try {
 			return setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats(limit));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("获取所有统计项目异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -103,8 +102,7 @@ public class ProjectController extends BaseController {
 		try {
 			return setJson(SUCCESS_CODE, projectBranchService.showStatsByUser(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("根据User显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -120,8 +118,7 @@ public class ProjectController extends BaseController {
 			return setJson(SUCCESS_CODE, projectBranchService.showStatsByDay(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("根据时间显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -137,8 +134,7 @@ public class ProjectController extends BaseController {
 			return setJson(SUCCESS_CODE, projectBranchService.showStatsByUserAndDay(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("根据时间和用户显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -154,8 +150,7 @@ public class ProjectController extends BaseController {
 			return setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("根据时间和用户显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -169,8 +164,7 @@ public class ProjectController extends BaseController {
 		try {
 			return setJson(SUCCESS_CODE, projectBranchService.statsByDay(MongoDateUtil.getFormat(dateformat),MongoDateUtil.getOperation(null, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("根据时间显示统计所有项目数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -183,8 +177,7 @@ public class ProjectController extends BaseController {
 		try {
 			return setJson(SUCCESS_CODE, projectBranchService.getProAllAuthorName(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("获取项目所有提交者异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
 		}
 

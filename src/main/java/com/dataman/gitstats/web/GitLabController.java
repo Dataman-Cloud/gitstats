@@ -31,7 +31,7 @@ public class GitLabController extends BaseController{
 			// 只返回成员项目
 			return  setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getProjectApi().getMemberProjects());
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("获取帐号下面所有项目异常：", e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -51,7 +51,7 @@ public class GitLabController extends BaseController{
 //			}
 			return  setJson(SUCCESS_CODE,branchList);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("获取项目下面所有分支异常：", e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 
@@ -65,7 +65,7 @@ public class GitLabController extends BaseController{
 		try {
 			return  setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getProjectApi().getMembers(pid));
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("获取项目下面所有分支异常：", e);
 			return  setJson(FAIL_CODE, e.getMessage());
 		}
 

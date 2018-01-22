@@ -103,7 +103,7 @@ public class ProjectBranchService {
 				pbs.setLastupdate(cal.getTime());
 				projectBranchStatsRepository.insert(pbs);
 				asyncTask.initProjectStats(pbs);
-				if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid())){
+				if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid(),webHookUrl)){
 					webHookService.addGitlabPushEventWebHook(pbs,webHookUrl);
 				}
 			}catch (Exception e){
@@ -117,12 +117,12 @@ public class ProjectBranchService {
 	}
 	
 	
-	boolean checkWebhookStats(String aid,int pid) throws GitLabApiException{
+	boolean checkWebhookStats(String aid,int pid,String webHookUrl) throws GitLabApiException{
 		boolean flag=false;
 		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(aid);
 		List<ProjectHook> hooks= gitLabApi.getProjectApi().getHooks(pid);
 		if(!hooks.isEmpty()){
-			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf("/webHook/listener")>0).findFirst().isPresent();
+			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf(webHookUrl)>0).findFirst().isPresent();
 		}
 		return flag;
 	}
@@ -164,7 +164,7 @@ public class ProjectBranchService {
 			pbs.setStatus(0);
 			projectBranchStatsRepository.save(pbs);
 			asyncTask.initProjectStats(pbs);
-			if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid())){
+			if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid(),webHookUrl)){
 				webHookService.addGitlabPushEventWebHook(pbs,webHookUrl);
 			}
 		}catch (Exception e){
