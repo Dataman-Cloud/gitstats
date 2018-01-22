@@ -124,7 +124,7 @@ a {
 
 	<div id="app">
 		<el-row> <el-col :span="24"> 
-		<el-carousel :height="appheight+'px'" :interval=100000>
+		<el-carousel :height="appheight+'px'" :interval=10000>
 			<el-carousel-item v-for="(pro,currentidx) in projects">
 				<el-row :height="appheight*66/623+'px'">
 					<el-col :span="23" :offset="1">
@@ -515,7 +515,7 @@ a {
 		    mounted () {
 			   console.log("init");
 			   this.getProject();
-			   this.myinterval = setInterval(() => this.getProject(), 15000);
+			   this.myinterval = setInterval(() => this.getProject(), this.projects.length==0?60000:this.projects.length*1000);
 		    },
 		    beforeDestroy: function () {
 		       clearInterval(this.myinterval);
