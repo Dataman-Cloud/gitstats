@@ -176,7 +176,7 @@ a {
 
 							<el-row  :style="'height:'+appheight*86/623+'px;width:'+appwidth*587/1237+'px;'+(parseInt(currentidx%2)==0?'':'color:white;')">
 
-								<div :style="'width:'+appwidth*179/1237+'px;background: '+(parseInt(currentidx%2)==0?'#142721;':'#519e7e;')+'border-radius: 5px;float:left;'+(parseInt(currentidx%2)==0?'border: solid #65c49d 1px;':'')">
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#142721;':'#519e7e;')+'border-radius: 5px;float:left;'+(parseInt(currentidx%2)==0?'border: solid #65c49d 1px;':'')">
 									<el-row :style="'background-color:'+ (parseInt(currentidx%2)==0?'#000000':'#65c59f')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
 										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
 											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#65c49d;':'')+'margin-left: 10%'">{{totalRow}}</span>
@@ -190,7 +190,7 @@ a {
 									</el-row>
 								</div>
 
-								<div :style="'width:'+appwidth*179/1237+'px;background:'+(parseInt(currentidx%2)==0?'#141c27;border: solid #648dc5 1px;':'#3b414d;')+'border-radius: 5px;float:left;margin-left:'+appwidth*20/1237+'px'">
+								<div :style="'width:'+appwidth*130/1237+'px;background:'+(parseInt(currentidx%2)==0?'#141c27;border: solid #648dc5 1px;':'#3b414d;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px'">
 									<el-row :style="'background-color:'+(parseInt(currentidx%2)==0?'#000000':'#4a525f')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
 										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
 											<span :style="'font-size: 25px;font-weight: bold;color:#648dc5;'+(parseInt(currentidx%2)==0?'color:#648dc5;':'')+'margin-left: 10%;'">{{totalAddRow}}</span>
@@ -204,7 +204,7 @@ a {
 									</el-row>
 								</div>
 
-								<div :style="'width:'+appwidth*179/1237+'px;background: '+(parseInt(currentidx%2)==0?'#32181b;border: solid #f77a81 1px;':'#c66167;')+'border-radius: 5px;float:left;margin-left:'+appwidth*20/1237+'px;'">
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#32181b;border: solid #f77a81 1px;':'#c66167;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px;'">
 									<el-row :style="'background-color: '+(parseInt(currentidx%2)==0?'#000000':'#f87980')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
 										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
 											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#f77a81;':'')+'margin-left: 10%'">{{totalDelRow}}</span>
@@ -214,6 +214,20 @@ a {
 									<el-row>
 										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
 											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总代码删除量
+										</el-col>
+									</el-row>
+								</div>
+
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#467500;border: solid #73BF00 1px;':'#009100;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px;'">
+									<el-row :style="'background-color: '+(parseInt(currentidx%2)==0?'#000000':'#28FF28')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
+										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
+											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#73BF00;':'')+'margin-left: 10%'">{{totalCommits}}</span>
+											<img src="/img/commit.png" style="width: 25px;position: absolute;top:50%;right:10%;transform: translateY(-50%)" />
+										</el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
+											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总提交次数
 										</el-col>
 									</el-row>
 								</div>
@@ -257,6 +271,7 @@ a {
 					totalRow:0,
 					totalAddRow:0,
 					totalDelRow:0,
+					totalCommits:0,
 					childinterval:'',
 					unit: 'YMD'
 				}
@@ -275,6 +290,8 @@ a {
 		    			self.totalRow = response.data.data.totalRow;
 		    			self.totalAddRow = response.data.data.totalAddRow;
 		    			self.totalDelRow = response.data.data.totalDelRow;
+						self.totalCommits=response.data.data.totalCommits;
+						console.log("***************totalCommits="+self.totalCommits);
 		    			self.showStatsData(self.statsData);
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -355,7 +372,7 @@ a {
 								},
 								axisLabel:{
 									show:true,
-									color:parseInt(this.currentidx%2)==0?"#3C3C3C":"#000000"
+									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000"
 								}
 							},
 				            yAxis: {
@@ -378,7 +395,7 @@ a {
 								},
 								axisLabel:{
 									show:true,
-									color:parseInt(this.currentidx%2)==0?"#3C3C3C":"#000000"
+									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000"
 								},
 								axisTick:{
 									length:0

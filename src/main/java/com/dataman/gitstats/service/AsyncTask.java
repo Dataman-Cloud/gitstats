@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApi.ApiVersion;
@@ -34,6 +32,7 @@ import com.dataman.gitstats.util.CallBack;
 import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
+import sun.nio.ch.ThreadPool;
 
 
 @Component
@@ -55,9 +54,8 @@ public class AsyncTask {
 
 	@Autowired
 	private MergeRequestEventRecordRepository mergeRequestEventRecordRepository;
-	
 	@Autowired
-	StatsCommitAsyncTask statsCommitAsyncTask;
+	private StatsCommitAsyncTask statsCommitAsyncTask;
 	/**
 	 * @method initProjectStats(初始化数据)
 	 * @return String
@@ -71,37 +69,50 @@ public class AsyncTask {
 		logger.info("初始化开始:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
 		Calendar cal =Calendar.getInstance();
 		long begin = System.currentTimeMillis();
-		int addRow=0,removeRow=0;
+		int addRow=0,removeRow=0,totalCommits=0;
 		int projectId= pbs.getProid();
 		String branch=pbs.getBranch();
+		ScheduledThreadPoolExecutor pool=new ScheduledThreadPoolExecutor(9);
+		statsCommitAsyncTask.clearPageNum(pbs.getId());
 		try {
 			// 清理数据
 			GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(pbs.getAccountid());
 			//获取当前项目当前分支的所有commit
 			if(gitLabApi.getApiVersion() == ApiVersion.V4){
 				//分页获取 (每页获取 100个数据)
+				//TODO	这里的第一页数据查询出来没有入库？
 				Pager<Commit> page= gitLabApi.getCommitsApi().getCommits(projectId, branch, null, cal.getTime(),100);
 				logger.info(pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
 				CountDownLatch cdl=new CountDownLatch(page.getTotalPages());
 				List<Future<CommitStatsVo>> stats=new ArrayList<>();
 				//异步读取分页信息
 				while (page.hasNext()) {
-					List<Commit> list=  page.next();
-					Future<CommitStatsVo> f= statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pbs.getId(), page.getCurrentPage(), cdl,null);
-					stats.add(f);
+					pool.execute(new Runnable() {
+						@Override
+						public void run() {
+							List<Commit> list=  page.next();
+							Future<CommitStatsVo> f= null;
+							try {
+								f = statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pbs.getId(), page.getCurrentPage(), cdl,null);
+								stats.add(f);
+							} catch (Exception e) {
+								logger.info("初始化失败:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
+								logger.error("失败原因：版本号V4：",e);
+								pbs.setStatus(-1);
+								projectBranchStatsRepository.save(pbs);
+								pool.shutdownNow();
+							}
+						}
+					});
 				}
 				// 计数机阻塞 返回结果
 				cdl.await();
 				// 统计 每页 返回的结果
 				for (Future<CommitStatsVo> future : stats) {
-					try {
 						CommitStatsVo vo= future.get();
 						addRow+=vo.getAddrow();
 						removeRow+=vo.getRemoverow();
-					} catch (InterruptedException | ExecutionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					    totalCommits+=vo.getCommit();
 				}
 				pbs.setStatus(1);
 				pbs.setTotalAddRow(addRow);
@@ -113,16 +124,29 @@ public class AsyncTask {
 				long usetime = begin-System.currentTimeMillis();
 				logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
 			}else if(gitLabApi.getApiVersion() == ApiVersion.V3){
-				int pageNum=0;
-				boolean hasNext=true; 
+				Integer pageNum=0;
+				boolean hasNext=true;
 				V3StatsCallback v3back=new V3StatsCallback(pbs,projectBranchStatsRepository,begin);
 				while (hasNext) {
-					List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId,branch,null,new Date(),pageNum,100);
+					List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId,branch,null,null,pageNum,100);
 					if(list.isEmpty()){
 						hasNext=false;
 					}else{
 						v3back.addPages();
-						statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pbs.getId(), pageNum+1, null,v3back);
+						pool.execute(new Runnable() {
+							@Override
+							public void run() {
+								try {
+									statsCommitAsyncTask.commitstats(list, gitLabApi, projectId, pbs.getId(), 0, null,v3back);
+								} catch (Exception e) {
+									logger.info("**********************************初始化失败:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
+									logger.error("失败原因：版本号V3：",e);
+									pbs.setStatus(-1);
+									projectBranchStatsRepository.save(pbs);
+									pool.shutdownNow();
+								}
+							}
+						});
 					}
 					pageNum++;
 				}
@@ -132,9 +156,96 @@ public class AsyncTask {
 			logger.error("失败原因:",e);
 			pbs.setStatus(-1);
 			projectBranchStatsRepository.save(pbs);
+			pool.shutdownNow();
+		}finally {
+			if(!pool.isTerminating()){
+				pool.shutdown();
+			}
 		}
 		return new AsyncResult<String>("初始化完成");  
 	}
+
+	/**
+	 * 不使用多线程并发请求gitlab
+	 * @param pbs
+	 * @return
+	 * @throws
+	 */
+	@Async
+	public Future<String> initProjectStats2(ProjectBranchStats pbs) throws Exception{
+		logger.info("初始化开始:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
+		Calendar cal =Calendar.getInstance();
+		long begin = System.currentTimeMillis();
+		int addRow=0,removeRow=0;
+		int projectId= pbs.getProid();
+		String branch=pbs.getBranch();
+		try {
+			// 清理数据
+			GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(pbs.getAccountid());
+			//获取当前项目当前分支的所有commit
+			if(gitLabApi.getApiVersion() == ApiVersion.V4){
+				//分页获取 (每页获取 100个数据)
+				//TODO	这里的第一页数据查询出来没有入库？
+				Pager<Commit> page= gitLabApi.getCommitsApi().getCommits(projectId, branch, null, cal.getTime(),100);
+				logger.info(pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+":TotalPages:"+page.getTotalPages());
+				List<CommitStatsVo> stats=new ArrayList<>();
+				//异步读取分页信息
+				while (page.hasNext()) {
+					List<Commit> list=  page.next();
+					CommitStatsVo f= statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(), page.getCurrentPage());
+					stats.add(f);
+				}
+				// 计数机阻塞 返回结果
+				// 统计 每页 返回的结果
+				for (CommitStatsVo vo : stats) {
+					addRow+=vo.getAddrow();
+					removeRow+=vo.getRemoverow();
+				}
+				pbs.setStatus(1);
+				pbs.setTotalAddRow(addRow);
+				pbs.setTotalDelRow(removeRow);
+				pbs.setTotalRow(addRow-removeRow);
+				pbs.setLastupdate(cal.getTime());
+				projectBranchStatsRepository.save(pbs);  //保存跟新记录
+				logger.info("update success");
+				long usetime = begin-System.currentTimeMillis();
+				logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
+			}else if(gitLabApi.getApiVersion() == ApiVersion.V3){
+				Integer pageNum=0;
+				boolean hasNext=true;
+				List<CommitStatsVo> commits=new ArrayList<CommitStatsVo>();
+				while (hasNext) {
+					List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId,branch,null,null,pageNum,100);
+					if(list.isEmpty()){
+						hasNext=false;
+					}else{
+						commits.add(statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(), pageNum + 1));
+					}
+					pageNum++;
+				}
+				for (CommitStatsVo vo : commits) {
+					addRow+=vo.getAddrow();
+					removeRow+=vo.getRemoverow();
+				}
+				pbs.setStatus(1);
+				pbs.setTotalAddRow(addRow);
+				pbs.setTotalDelRow(removeRow);
+				pbs.setTotalRow(addRow-removeRow);
+				pbs.setLastupdate(cal.getTime());
+				projectBranchStatsRepository.save(pbs);  //保存跟新记录
+				logger.info("update success");
+				long usetime = begin-System.currentTimeMillis();
+				logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
+			}
+		} catch (Exception e) {
+			logger.info("初始化失败:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
+			logger.error("失败原因:",e);
+			pbs.setStatus(-1);
+			projectBranchStatsRepository.save(pbs);
+		}
+		return new AsyncResult<String>("初始化完成");
+	}
+
 
 	@Async
 	public void saveCommitStatsFromPushEventCommitsList(PushEventRecord record,ProjectBranchStats projectBranchStats,List<EventCommit> eventCommitList) throws Exception {
@@ -242,6 +353,7 @@ public class AsyncTask {
 				pbs.setTotalAddRow(addRow);
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
+				pbs.setTotalCommits(total);
 				pbs.setLastupdate(cal.getTime());
 				projectBranchStatsRepository.save(pbs);  //保存跟新记录
 				logger.info("update success");

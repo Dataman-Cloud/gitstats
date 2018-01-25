@@ -31,6 +31,7 @@ public class ProjectBranchStats {
 	int totalRow;
 	int totalAddRow;
 	int totalDelRow;
+	int totalCommits;
 	Date createdAt; //项目创建时间
 	Date lastupdate;
 	private String showLastupdate;
@@ -91,6 +92,15 @@ public class ProjectBranchStats {
 	public void setTotalDelRow(int totalDelRow) {
 		this.totalDelRow = totalDelRow;
 	}
+
+	public int getTotalCommits() {
+		return totalCommits;
+	}
+
+	public void setTotalCommits(int totalCommits) {
+		this.totalCommits = totalCommits;
+	}
+
 	public Date getLastupdate() {
 		return lastupdate;
 	}

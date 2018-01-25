@@ -122,7 +122,7 @@ public class ProjectBranchService {
 		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(aid);
 		List<ProjectHook> hooks= gitLabApi.getProjectApi().getHooks(pid);
 		if(!hooks.isEmpty()){
-			flag= hooks.stream().filter(hook -> hook.getUrl().indexOf(webHookUrl)>0).findFirst().isPresent();
+			flag=hooks.stream().anyMatch(hook->hook.getUrl().equals(webHookUrl));
 		}
 		return flag;
 	}
