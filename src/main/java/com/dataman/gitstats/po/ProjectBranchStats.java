@@ -22,6 +22,8 @@ public class ProjectBranchStats {
 	String id;		//自动生成
 	String accountid;
 	String branch;
+	private String projectId;//mongodb中存的projectStats主键
+	private String groupId;//mongodb中存的GroupStats主键
 	String projectNameWithNamespace;//项目名称+命名空间  只有项目名称可能会重复
 	int proid;
 	int status; // 0  未初始化  1 初始化
@@ -166,7 +168,23 @@ public class ProjectBranchStats {
 		this.lastDate = lastDate;
 	}
 
+	public String getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
 	public String getShowStatus(){
-		return this.status==0?"正在初始化":this.status==-1?"初始化出错":"初始化完成";
+		return this.status==0?"正在初始化":this.status==-1?"初始化出错":this.status==2?"group初始化完成":"初始化完成";
 	}
 }

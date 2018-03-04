@@ -9,7 +9,7 @@ public enum ApiResultCode {
     ERR_NOT_AUTH("401","您未登录，请登录后操作"),
     ERR_AUTH_TIMEOUT("402","登录超时，请重新登录"),
     ERR_USERNAME_PASSWORD("1001","用户名密码错误"),
-    ERR_PARAMETER("1002","参数错误"),
+    ERR_PARAMETER("1002","参数错误:"),
     ERR_OLD_PASSWORD("1003","旧密码错误"),
     ERR_1001("1000","未知错误");
     private String code;

@@ -36,6 +36,20 @@ public class GitLabController extends BaseController{
 		}
 
 	}
+
+	@ApiOperation(value = "获取帐号下面所有项目组")
+	@RequestMapping(value="/{aid}/groups",method=RequestMethod.GET)
+	public Object getAllGroups(@ApiParam(required = true, name = "aid", value = "帐号id") @PathVariable String aid){
+
+		try {
+			// 只返回成员项目
+			return  setJson(SUCCESS_CODE,gitlabUtil.getGitLabApi(aid).getGroupApi().getGroups());
+		} catch (Exception e) {
+			logger.error("获取帐号下面所有项目组异常：", e);
+			return  setJson(FAIL_CODE, e.getMessage());
+		}
+
+	}
 	
 	@ApiOperation(value = "获取项目下面所有分支")
 	@RequestMapping(value="/{aid}/{pid}/branchs",method=RequestMethod.GET)

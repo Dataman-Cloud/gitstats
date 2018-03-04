@@ -149,6 +149,18 @@ public class WebHookService {
         logger.info("**************************添加成功*****************");
     }
 
+    public void addGitlabPushEventWebHook(String aid,int pid,String webHookUrl) throws Exception {
+        logger.info("*********************hook url:{}", webHookUrl);
+        GitLabApi gitLabApi = gitlabUtil.getGitLabApi(aid);
+        ProjectHook projectHook = new ProjectHook();
+        projectHook.setPushEvents(true);
+        projectHook.setMergeRequestsEvents(true);
+        projectHook.setUrl(webHookUrl);
+        projectHook.setToken("123");
+        gitLabApi.getProjectApi().addHook(pid, webHookUrl, projectHook, true, null);
+        logger.info("**************************添加webhook成功*****************");
+    }
+
     public List<ProjectHook> getProjectHook(String branchId) throws Exception {
         ProjectBranchStats projectBranchStats = projectBranchService.findProjectBranchStatsById(branchId);
         GitLabApi gitLabApi = gitlabUtil.getGitLabApi(projectBranchStats.getAccountid());

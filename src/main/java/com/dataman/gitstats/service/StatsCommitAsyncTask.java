@@ -15,6 +15,7 @@ import org.gitlab4j.api.models.CommitStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
@@ -74,7 +75,7 @@ public class StatsCommitAsyncTask {
 	}
 
 	public CommitStatsVo commitstats2(List<Commit> list,GitLabApi api,int pid,
-											 String branchId,int pageNum) throws Exception{
+											 String branchId,String groupId,int pageNum) throws Exception{
 		logger.info("加载第"+pageNum+"页数据");
 		long begin = System.currentTimeMillis();
 		int addRow=0;
@@ -88,10 +89,17 @@ public class StatsCommitAsyncTask {
 				Commit sigleCommit= api.getCommitsApi().getCommit(pid, commit.getId());
 				CommitStats stats= sigleCommit.getStats();
 				csp.set_id();
+				csp.setBranchId(groupId);
 				csp.setAddRow(stats.getAdditions());
 				csp.setRemoveRow(stats.getDeletions());
 				csp.setCrateDate(new Date());
-				commitStatsRepository.insert(csp);
+				try{//TODO(此处需捕捉唯一索引异常)
+					commitStatsRepository.insert(csp);
+				}catch(DuplicateKeyException e){
+					logger.error("插入数据库异常：",e);
+				}
+
+
 				addRow+=stats.getAdditions();
 				removeRow+=stats.getDeletions();
 			}

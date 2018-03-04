@@ -20,6 +20,8 @@ public interface CommitStatsRepository  extends MongoRepository<CommitStatsPo,St
 	
 	public Long deleteByBranchId(String branchId);
 
+	public long deleteByGroupId(String groupId);
+
 	public Page<CommitStatsPo> findByBranchIdAndCreatedAtBetween(String branchId,Date begin,Date end,Pageable pageable);
 	
 	public Page<CommitStatsPo> findByBranchIdAndAuthorNameAndCreatedAtBetween(String branchId,String authorName,Date begin,Date end,Pageable pageable);

@@ -101,6 +101,7 @@ public class ProjectBranchService {
 				pbs.setCreatedAt(project.getCreatedAt());
 				pbs.setCreatedate(cal.getTime());
 				pbs.setLastupdate(cal.getTime());
+				pbs.setId(project.getWebUrl()+"_"+param.getProid()+"_"+param.getBranch());
 				projectBranchStatsRepository.insert(pbs);
 				asyncTask.initProjectStats(pbs);
 				if(!checkWebhookStats(pbs.getAccountid(),pbs.getProid(),webHookUrl)){

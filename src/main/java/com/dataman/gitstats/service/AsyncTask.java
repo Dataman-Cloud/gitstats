@@ -6,12 +6,19 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
+import com.dataman.gitstats.param.ProjectWithBranches;
+import com.dataman.gitstats.po.*;
+import com.dataman.gitstats.repository.*;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApi.ApiVersion;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.Pager;
+import org.gitlab4j.api.models.Branch;
 import org.gitlab4j.api.models.Commit;
+import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.webhook.EventCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,19 +27,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
-import com.dataman.gitstats.po.CommitStatsPo;
-import com.dataman.gitstats.po.MergeRequestEventRecord;
-import com.dataman.gitstats.po.ProjectBranchStats;
-import com.dataman.gitstats.po.PushEventRecord;
-import com.dataman.gitstats.repository.CommitStatsRepository;
-import com.dataman.gitstats.repository.MergeRequestEventRecordRepository;
-import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
-import com.dataman.gitstats.repository.PushEventRecordRepository;
-import com.dataman.gitstats.util.CallBack;
 import com.dataman.gitstats.util.ClassUitl;
 import com.dataman.gitstats.util.GitlabUtil;
 import com.dataman.gitstats.vo.CommitStatsVo;
-import sun.nio.ch.ThreadPool;
 
 
 @Component
@@ -56,6 +53,146 @@ public class AsyncTask {
 	private MergeRequestEventRecordRepository mergeRequestEventRecordRepository;
 	@Autowired
 	private StatsCommitAsyncTask statsCommitAsyncTask;
+
+	@Autowired
+	private ProjectRepository projectRepository;
+
+	@Autowired
+	private GroupStatsRepository groupStatsRepository;
+
+
+	@Async
+	public void initGroupStats(GroupStats groupStats) throws Exception{
+		logger.info("初始化开始:"+groupStats.getWebUrl());
+		Calendar cal =Calendar.getInstance();
+		long begin = System.currentTimeMillis();
+		int groupAddRow=0,groupRemoveRow=0,groupTotalCommits=0;
+		ScheduledThreadPoolExecutor pool=new ScheduledThreadPoolExecutor(9);
+		GitLabApi gitLabApi=  gitlabUtil.getGitLabApi(groupStats.getAccountid());
+		List<ProjectBranchStats> targetProjectBranchStatsList=new ArrayList<ProjectBranchStats>();
+		List<Project> allProjects= gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+		if(groupStats.getInclude()!=null){
+			for(ProjectWithBranches projectWithBranchs:groupStats.getInclude()){
+				Project project=gitLabApi.getProjectApi().getProject(groupStats.getFullPath(),projectWithBranchs.getName());
+				ProjectStats projectStats=initProjectStats(groupStats,project);
+				if(projectWithBranchs.getBranches()!=null){//include中包含分支列表则只初始化分支列表
+					for(String branchName:projectWithBranchs.getBranches()){
+						Branch branch=gitLabApi.getRepositoryApi().getBranch(project.getId(),branchName);
+						ProjectBranchStats projectBranchStats=initProjectBranchStats(groupStats,projectStats,branch);
+						targetProjectBranchStatsList.add(projectBranchStats);
+					}
+				}else{//include中不包含分支列表则初始化所有分支，exclude中包含的除外
+					if(groupStats.getExclude()!=null&&groupStats.getExclude().stream().anyMatch(projectWithBranches -> projectWithBranches.getName().equals(projectWithBranchs.getName()))){
+						List<String> excludeBranches=groupStats.getExclude().stream().filter(projectWithBranches -> projectWithBranches.getName().equals(projectWithBranchs.getName()))
+								.flatMap(map -> map.getBranches().stream()).collect(Collectors.toList());
+						List<Branch> allBranches=gitLabApi.getRepositoryApi().getBranches(project.getId());
+						for(Branch branch:allBranches){
+							if(excludeBranches.contains(branch.getName())){
+								continue;
+							}
+							ProjectBranchStats projectBranchStats=initProjectBranchStats(groupStats,projectStats,branch);
+							targetProjectBranchStatsList.add(projectBranchStats);
+						}
+					}
+
+				}
+
+			}
+		}else if(groupStats.getExclude()!=null){//include 为空，exclude不为空
+			for(Project project:allProjects){
+				ProjectStats projectStats=initProjectStats(groupStats,project);
+				List<String> excludeProjects=groupStats.getExclude().stream().map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+				if(excludeProjects.contains(project.getName())){
+					List<String> excludeBranches=groupStats.getExclude().stream().filter(projectWithBranches -> projectWithBranches.getName().equals(project.getName()))
+							.flatMap(map -> map.getBranches().stream()).collect(Collectors.toList());
+					if(excludeBranches!=null&&excludeBranches.size()>0){
+						List<Branch> allBranches=gitLabApi.getRepositoryApi().getBranches(project.getId());
+						for(Branch branch:allBranches){
+							if(excludeBranches.contains(branch.getName())){
+								continue;
+							}
+							ProjectBranchStats projectBranchStats=initProjectBranchStats(groupStats,projectStats,branch);
+							targetProjectBranchStatsList.add(projectBranchStats);
+						}
+					}else{
+						continue;
+					}
+
+				}
+			}
+		}else{//include 、exclude都为空
+			for(Project project:allProjects){
+				ProjectStats projectStats=initProjectStats(groupStats,project);
+				List<Branch> allBranches=gitLabApi.getRepositoryApi().getBranches(project.getId());
+				for(Branch branch:allBranches){
+					ProjectBranchStats projectBranchStats=initProjectBranchStats(groupStats,projectStats,branch);
+					targetProjectBranchStatsList.add(projectBranchStats);
+				}
+			}
+		}
+		try{
+			CountDownLatch cdl=new CountDownLatch(targetProjectBranchStatsList.size());
+			for(ProjectBranchStats projectBranchStats:targetProjectBranchStatsList){
+				pool.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							initProjectStats2(projectBranchStats,cdl);
+						} catch (Exception e) {
+							logger.error("初始化出错：",e);
+							pool.shutdownNow();
+						}
+					}
+				});
+			}
+			cdl.await();
+			groupStats.setStatus(1);
+			groupStats.setLastupdate(new Date());
+			groupStatsRepository.save(groupStats);
+			long end=System.currentTimeMillis();
+			logger.info(groupStats.getName()+"初始化完成，耗时"+(end-begin)+"ms");
+		}catch (Exception e){
+			logger.error("初始化出错：",e);
+			pool.shutdownNow();
+		}finally {
+			pool.shutdown();
+		}
+
+	}
+
+	private ProjectBranchStats initProjectBranchStats(GroupStats groupStats,ProjectStats projectStats,Branch branch){
+		ProjectBranchStats projectBranchStats=new ProjectBranchStats();
+		projectBranchStats.setId(projectStats.getWeburl()+"_"+projectBranchStats.getProid()+"_"+branch);
+		projectBranchStats.setGroupId(groupStats.getId());
+		projectBranchStats.setProjectId(projectStats.getId());
+		projectBranchStats.setBranch(branch.getName());
+		projectBranchStats.setStatus(0);
+		projectBranchStats.setLastupdate(new Date());
+		projectBranchStats.setProjectNameWithNamespace(projectStats.getProjectNameWithNamespace());
+		projectBranchStats.setAccountid(groupStats.getAccountid());
+		projectBranchStats.setCreatedAt(projectStats.getCreatedAt());
+		projectBranchStats.setProid(projectStats.getProid());
+		projectBranchStats=projectBranchStatsRepository.insert(projectBranchStats);
+		return projectBranchStats;
+	}
+
+	private ProjectStats initProjectStats(GroupStats groupStats,Project project){
+		ProjectStats projectStats=new ProjectStats();
+		projectStats.setId(project.getWebUrl()+"_"+project.getId());
+		projectStats.setProid(project.getId());
+		projectStats.setStatus(0);
+		projectStats.setProjectNameWithNamespace(project.getNameWithNamespace());
+		projectStats.setCreatedAt(project.getCreatedAt());
+		projectStats.setAccountid(groupStats.getAccountid());
+		projectStats.setCreatedate(new Date());
+		projectStats.setGroupId(groupStats.getId());
+		projectStats.setLastupdate(new Date());
+		projectStats.setWeburl(project.getWebUrl());
+		projectStats.setCreatedate(new Date());
+		projectRepository.insert(projectStats);
+		return projectStats;
+	}
+
 	/**
 	 * @method initProjectStats(初始化数据)
 	 * @return String
@@ -168,11 +305,12 @@ public class AsyncTask {
 	/**
 	 * 不使用多线程并发请求gitlab
 	 * @param pbs
+	 * @param cdl
 	 * @return
 	 * @throws
 	 */
 	@Async
-	public Future<String> initProjectStats2(ProjectBranchStats pbs) throws Exception{
+	public void initProjectStats2(ProjectBranchStats pbs, CountDownLatch cdl) throws Exception{
 		logger.info("初始化开始:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
 		Calendar cal =Calendar.getInstance();
 		long begin = System.currentTimeMillis();
@@ -192,7 +330,7 @@ public class AsyncTask {
 				//异步读取分页信息
 				while (page.hasNext()) {
 					List<Commit> list=  page.next();
-					CommitStatsVo f= statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(), page.getCurrentPage());
+					CommitStatsVo f= statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(),pbs.getGroupId(), page.getCurrentPage());
 					stats.add(f);
 				}
 				// 计数机阻塞 返回结果
@@ -201,7 +339,7 @@ public class AsyncTask {
 					addRow+=vo.getAddrow();
 					removeRow+=vo.getRemoverow();
 				}
-				pbs.setStatus(1);
+				pbs.setStatus(2);
 				pbs.setTotalAddRow(addRow);
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
@@ -219,7 +357,7 @@ public class AsyncTask {
 					if(list.isEmpty()){
 						hasNext=false;
 					}else{
-						commits.add(statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(), pageNum + 1));
+						commits.add(statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(),pbs.getGroupId(), pageNum + 1));
 					}
 					pageNum++;
 				}
@@ -227,12 +365,25 @@ public class AsyncTask {
 					addRow+=vo.getAddrow();
 					removeRow+=vo.getRemoverow();
 				}
-				pbs.setStatus(1);
+				pbs.setStatus(2);
 				pbs.setTotalAddRow(addRow);
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
 				pbs.setLastupdate(cal.getTime());
-				projectBranchStatsRepository.save(pbs);  //保存跟新记录
+
+				synchronized (this.getClass()){
+					ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
+					projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
+					projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
+					projectStats.setTotalRow(projectStats.getTotalRow()+pbs.getTotalRow());
+					projectRepository.save(projectStats);
+					GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
+					groupStats.setTotalAddRow(groupStats.getTotalAddRow()+pbs.getTotalAddRow());
+					groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
+					groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
+					groupStatsRepository.save(groupStats);
+				}
+
 				logger.info("update success");
 				long usetime = begin-System.currentTimeMillis();
 				logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
@@ -243,7 +394,9 @@ public class AsyncTask {
 			pbs.setStatus(-1);
 			projectBranchStatsRepository.save(pbs);
 		}
-		return new AsyncResult<String>("初始化完成");
+		if (null != cdl) {
+			cdl.countDown();
+		}
 	}
 
 

@@ -92,6 +92,41 @@ public class MongoDateUtil {
 		}
 		return Aggregation.match(query);
 	}
-	
+	public static MatchOperation getGroupOperation(String groupId,String DateCode,Integer lastDate){
+		Criteria query=new Criteria();
+		if (!StringUtils.isEmpty(groupId)) {
+			query.and("groupId").is(groupId);
+		}
+		if(lastDate!=null){
+			Calendar cal=Calendar.getInstance();
+			cal.set(Calendar.HOUR, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 1);
+			cal.set(Calendar.MILLISECOND, 0);
+			if(StringUtils.isEmpty(DateCode)){
+				cal.add(Calendar.DAY_OF_YEAR, -lastDate);
+			}else{
+				switch (DateCode) {
+					case "YMD":
+						cal.add(Calendar.DAY_OF_YEAR, -lastDate);
+						break;
+					case "YM":
+						cal.add(Calendar.MONTH, -lastDate);
+						break;
+					case "YW":
+						cal.add(Calendar.WEEK_OF_YEAR, -lastDate);
+						break;
+					case "Y":
+						cal.add(Calendar.YEAR, -lastDate);
+						break;
+					default:
+						cal.add(Calendar.DAY_OF_YEAR, -lastDate);
+						break;
+				}
+			}
+			query.and("createdAt").gte(cal.getTime());
+		}
+		return Aggregation.match(query);
+	}
 	
 }
