@@ -86,10 +86,11 @@ public class StatsCommitAsyncTask {
 				CommitStatsPo csp=new CommitStatsPo();
 				csp=ClassUitl.copyProperties(commit, csp);
 				csp.setBranchId(branchId);
-				Commit sigleCommit= api.getCommitsApi().getCommit(pid, commit.getId());
+				Commit sigleCommit= null;
+				sigleCommit=api.getCommitsApi().getCommit(pid, commit.getId());
 				CommitStats stats= sigleCommit.getStats();
 				csp.set_id();
-				csp.setBranchId(groupId);
+				csp.setGroupId(groupId);
 				csp.setAddRow(stats.getAdditions());
 				csp.setRemoveRow(stats.getDeletions());
 				csp.setCrateDate(new Date());

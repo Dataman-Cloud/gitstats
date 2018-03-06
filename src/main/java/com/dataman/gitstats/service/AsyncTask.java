@@ -9,6 +9,8 @@ import java.util.concurrent.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.dataman.gitstats.exception.ApiResultCode;
+import com.dataman.gitstats.exception.BusinessException;
 import com.dataman.gitstats.param.ProjectWithBranches;
 import com.dataman.gitstats.po.*;
 import com.dataman.gitstats.repository.*;
@@ -118,6 +120,12 @@ public class AsyncTask {
 						continue;
 					}
 
+				}else{
+					List<Branch> allBranches=gitLabApi.getRepositoryApi().getBranches(project.getId());
+					for(Branch branch:allBranches){
+						ProjectBranchStats projectBranchStats=initProjectBranchStats(groupStats,projectStats,branch);
+						targetProjectBranchStatsList.add(projectBranchStats);
+					}
 				}
 			}
 		}else{//include 、exclude都为空
@@ -141,18 +149,27 @@ public class AsyncTask {
 						} catch (Exception e) {
 							logger.error("初始化出错：",e);
 							pool.shutdownNow();
+							GroupStats groupStats2=groupStatsRepository.findOne(groupStats.getId());
+							groupStats2.setStatus(-1);
+							groupStats2.setLastupdate(new Date());
+							groupStatsRepository.save(groupStats2);
 						}
 					}
 				});
 			}
 			cdl.await();
-			groupStats.setStatus(1);
-			groupStats.setLastupdate(new Date());
-			groupStatsRepository.save(groupStats);
+			GroupStats groupStats2=groupStatsRepository.findOne(groupStats.getId());
+			groupStats2.setStatus(1);
+			groupStats2.setLastupdate(new Date());
+			groupStatsRepository.save(groupStats2);
 			long end=System.currentTimeMillis();
-			logger.info(groupStats.getName()+"初始化完成，耗时"+(end-begin)+"ms");
+			logger.info(groupStats2.getName()+"初始化完成，耗时"+(end-begin)+"ms");
 		}catch (Exception e){
 			logger.error("初始化出错：",e);
+			GroupStats groupStats2=groupStatsRepository.findOne(groupStats.getId());
+			groupStats2.setStatus(-1);
+			groupStats2.setLastupdate(new Date());
+			groupStatsRepository.save(groupStats2);
 			pool.shutdownNow();
 		}finally {
 			pool.shutdown();
@@ -162,9 +179,10 @@ public class AsyncTask {
 
 	private ProjectBranchStats initProjectBranchStats(GroupStats groupStats,ProjectStats projectStats,Branch branch){
 		ProjectBranchStats projectBranchStats=new ProjectBranchStats();
-		projectBranchStats.setId(projectStats.getWeburl()+"_"+projectBranchStats.getProid()+"_"+branch);
+		projectBranchStats.setId(projectStats.getId()+"_"+projectBranchStats.getProid()+"_"+branch);
 		projectBranchStats.setGroupId(groupStats.getId());
 		projectBranchStats.setProjectId(projectStats.getId());
+		projectBranchStats.setWeburl(projectStats.getWeburl());
 		projectBranchStats.setBranch(branch.getName());
 		projectBranchStats.setStatus(0);
 		projectBranchStats.setLastupdate(new Date());
@@ -178,7 +196,7 @@ public class AsyncTask {
 
 	private ProjectStats initProjectStats(GroupStats groupStats,Project project){
 		ProjectStats projectStats=new ProjectStats();
-		projectStats.setId(project.getWebUrl()+"_"+project.getId());
+		projectStats.setId(groupStats.getId()+"_"+project.getId());
 		projectStats.setProid(project.getId());
 		projectStats.setStatus(0);
 		projectStats.setProjectNameWithNamespace(project.getNameWithNamespace());
@@ -302,6 +320,19 @@ public class AsyncTask {
 		return new AsyncResult<String>("初始化完成");  
 	}
 
+	private synchronized void updateGroup(ProjectBranchStats pbs){
+		ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
+		projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
+		projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
+		projectStats.setTotalRow(projectStats.getTotalRow()+pbs.getTotalRow());
+		projectRepository.save(projectStats);
+		GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
+		groupStats.setTotalAddRow(groupStats.getTotalAddRow()+pbs.getTotalAddRow());
+		groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
+		groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
+		groupStatsRepository.save(groupStats);
+	}
+
 	/**
 	 * 不使用多线程并发请求gitlab
 	 * @param pbs
@@ -370,8 +401,10 @@ public class AsyncTask {
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
 				pbs.setLastupdate(cal.getTime());
+				projectBranchStatsRepository.save(pbs);
 
 				synchronized (this.getClass()){
+					logger.info("*******************current thread's id="+Thread.currentThread().getId()+"***************start");
 					ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
 					projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
 					projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
@@ -382,6 +415,7 @@ public class AsyncTask {
 					groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
 					groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
 					groupStatsRepository.save(groupStats);
+					logger.info("=========================curret thread's id="+Thread.currentThread().getId()+"==============end");
 				}
 
 				logger.info("update success");
@@ -393,6 +427,7 @@ public class AsyncTask {
 			logger.error("失败原因:",e);
 			pbs.setStatus(-1);
 			projectBranchStatsRepository.save(pbs);
+			throw new BusinessException(ApiResultCode.ERR_1001);
 		}
 		if (null != cdl) {
 			cdl.countDown();

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>gitstats</title>
+<link rel="shortcut icon" type="image/x-icon" href="img/facicon.ico">
+<link rel="stylesheet" href="css/element-index.css">
+<style>
+body {
+	margin: 0;
+}
+
+a {
+	text-decoration: none;
+}
+
+#app {
+	width: 100%;
+	max-width: 100%;
+	overflow: -webkit-paged-x;
+	overflow-x: hidden;
+}
+
+.el-carousel__item h1 {
+	/*padding-left: 70px;*/
+}
+
+.el-carousel__item:nth-child(2n+1) {
+	background-color: #3C3C3C;
+	color:white;
+}
+.el-carousel__item:nth-child(2n+1) .myChart{
+	color: white;
+}
+
+.el-carousel__item:nth-child(2n) {
+	background-color: #ffffff;
+}
+
+.branchStats{
+
+}
+  .rage0 .el-table tr{
+		background-color: black;
+	    color:white
+	}
+.rage1 .el-table tr{
+	background-color: white;
+	color:black
+}
+.rage0 .el-table--enable-row-hover .el-table__body tr:hover>td{
+	background-color: #171717;
+}
+.rage1 .el-table--enable-row-hover .el-table__body tr:hover>td{
+	background-color: #F0F0F0;
+}
+.rage0 .el-table th{
+	background-color: #110E09;
+}
+.rage0 .el-table__header-wrapper thead div{
+	background-color: #110E09;
+	color:white;
+}
+.rage0 .el-table td,.rage0 .el-table th.is-leaf{
+	border-bottom: 1px dotted #272727;
+}
+	.el-table{
+		border: none;
+	}
+.el-table__body-wrapper{
+	overflow: hidden;
+}
+.rage0 .el-table::after,.rage0 .el-table::before{
+	background-color: #000000;
+	height: 0px;
+}
+.rage1 .el-table::after,.rage1 .el-table::before{
+	background-color: #ffffff;
+	height: 0px;
+}
+.el-table .cell, .el-table th>div{
+	padding-left: 0px;
+	padding-right: 0px;
+}
+.el-table .cell, .el-table th>div:first-child{
+	padding-left: 20px;
+	padding-right: 0px;
+}
+	.switchUnit0 ::before{
+		content: '维度切换：';
+		position: absolute;
+		right:35px;
+		color:white;
+		font-size: 15px;
+		font-weight: bold;
+	}
+.switchUnit1 ::before{
+	content: '维度切换：';
+	position: absolute;
+	right:35px;
+	color:black;
+	font-size: 15px;
+	font-weight: bold;
+}
+.el-radio-button__inner{
+	background-color: #a4b2b2;
+	color: white;
+	border-color: #d0d0d0;
+}
+.el-radio-button__orig-radio:checked+.el-radio-button__inner{
+	background-color: #8d9798;
+	border-color: #d0d0d0;
+	box-shadow: none;
+}
+ .el-radio-button__inner{
+	padding: 3px 10px;
+}
+.el-radio-button__inner:hover{
+	color:white;
+}
+</style>
+</head>
+<body>
+
+	<div id="app">
+		<el-row> <el-col :span="24"> 
+		<el-carousel :height="appheight+'px'" :interval=10000>
+			<el-carousel-item v-for="(pro,currentidx) in projects">
+				<el-row :height="appheight*66/623+'px'">
+					<el-col :span="23" :offset="1">
+						<h2>{{ pro.viewName }}</h2>
+					</el-col>
+				</el-row>
+				<projectstats :pbsid="pro.id" :appwidth="appwidth" :currentidx="currentidx" :appheight="appheight">
+					
+				</projectstats>
+			</el-carousel-item> 
+		</el-carousel> 
+		</el-col> </el-row>
+	</div>
+
+
+	<script src="js/Vue.js"></script>
+	<script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+	<script src="js/echarts.min.js"></script>
+	
+	<script type="text/x-template" id="branchStats-template">
+  		<div class='branchStats'>
+			<el-row :gutter="20">
+  				<el-col :span="11" :offset="1">
+						<div :id="getAllId(pbsid)" :style="'width:'+appwidth*587/1237+'px;height:'+appheight*370/623+'px;border-radius: 8px;'" class="myChart"></div>
+						<div  style="position:absolute;width:200px;top:20px;right:47%;z-index: 10;" >
+							<el-row>
+								<el-col :span="22" :offset="1">
+									<el-radio-group v-model="unit" >
+										<el-radio-button label="YMD" :class="'switchUnit'+parseInt(currentidx%2)">日</el-radio-button>
+										<el-radio-button label="YW">周</el-radio-button>
+										<el-radio-button label="YM">月</el-radio-button>
+										<el-radio-button label="Y">年</el-radio-button>
+									</el-radio-group>
+								</el-col>
+							</el-row>
+						</div>
+
+
+							<el-row>
+								<el-col :span="24">
+									<div :style="'height:'+appheight*63/621+'px;line-height:'+appheight*63/621+'px'">
+										<img src="/img/num-white.png" style="width:20px;margin-left: 10px;" v-if="parseInt(currentidx%2)==0" />
+										<img src="/img/num-black.png" style="width:20px;margin-left: 10px;" v-if="parseInt(currentidx%2)==1" />
+										<span>总计</span>
+									</div>
+								</el-col>
+							</el-row>
+
+							<el-row  :style="'height:'+appheight*86/623+'px;width:'+appwidth*587/1237+'px;'+(parseInt(currentidx%2)==0?'':'color:white;')">
+
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#142721;':'#519e7e;')+'border-radius: 5px;float:left;'+(parseInt(currentidx%2)==0?'border: solid #65c49d 1px;':'')">
+									<el-row :style="'background-color:'+ (parseInt(currentidx%2)==0?'#000000':'#65c59f')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
+										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
+											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#65c49d;':'')+'margin-left: 10%'">{{totalRow}}</span>
+											<img src="/img/code.png" style="width: 25px;position: absolute;top:50%;right:10%;transform: translateY(-50%)" />
+										</el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
+											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总代码量
+										</el-col>
+									</el-row>
+								</div>
+
+								<div :style="'width:'+appwidth*130/1237+'px;background:'+(parseInt(currentidx%2)==0?'#141c27;border: solid #648dc5 1px;':'#3b414d;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px'">
+									<el-row :style="'background-color:'+(parseInt(currentidx%2)==0?'#000000':'#4a525f')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
+										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
+											<span :style="'font-size: 25px;font-weight: bold;color:#648dc5;'+(parseInt(currentidx%2)==0?'color:#648dc5;':'')+'margin-left: 10%;'">{{totalAddRow}}</span>
+											<img src="/img/add.png" style="width: 25px;position: absolute;top:50%;right:10%;transform: translateY(-50%)" />
+										</el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
+											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总代码添加量
+										</el-col>
+									</el-row>
+								</div>
+
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#32181b;border: solid #f77a81 1px;':'#c66167;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px;'">
+									<el-row :style="'background-color: '+(parseInt(currentidx%2)==0?'#000000':'#f87980')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
+										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
+											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#f77a81;':'')+'margin-left: 10%'">{{totalDelRow}}</span>
+											<img src="/img/del.png" style="width: 25px;position: absolute;top:50%;right:10%;transform: translateY(-50%)" />
+										</el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
+											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总代码删除量
+										</el-col>
+									</el-row>
+								</div>
+
+								<div :style="'width:'+appwidth*130/1237+'px;background: '+(parseInt(currentidx%2)==0?'#467500;border: solid #73BF00 1px;':'#009100;')+'border-radius: 5px;float:left;margin-left:'+appwidth*15/1237+'px;'">
+									<el-row :style="'background-color: '+(parseInt(currentidx%2)==0?'#000000':'#28FF28')+';border-top-left-radius: 5px;border-top-right-radius: 5px;'">
+										<el-col :span="24" :style="'height:'+appheight*60/621+'px;line-height:'+appheight*60/621+'px'">
+											<span :style="'font-size: 25px;font-weight: bold;'+(parseInt(currentidx%2)==0?'color:#73BF00;':'')+'margin-left: 10%'">{{totalCommits}}</span>
+											<img src="/img/commit.png" style="width: 25px;position: absolute;top:50%;right:10%;transform: translateY(-50%)" />
+										</el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24" :style="'height:'+appheight*26/621+'px;line-height:'+appheight*26/621+'px;padding-left:10%'">
+											<i class="el-icon-caret-top" style="margin-right: 5%"></i>总提交次数
+										</el-col>
+									</el-row>
+								</div>
+
+							</el-row>
+				</el-col>
+  				<el-col :span="10" :offset="2">
+					<div  :id="getRageId(pbsid)" :style="'width:'+appwidth*489/1237+'px;border-radius: 5px;padding-top: 20px;'" :class="getRageClass(currentidx)">
+					 <img src="/img/table-white.svg" style="width:20px;margin:5px;float: left;margin-left: 20px;" v-if="parseInt(currentidx%2)==0"/>
+						<img src="/img/table-black.svg" style="width:20px;margin:5px;float: left;" v-if="parseInt(currentidx%2)==1"/>
+						<h3 style="margin-top: 0px;">代码累计提交</h3>
+						<el-table :data="statsByUserData" style="width: 100%;" :id="getTableId(pbsid)" :fit=false :highlight-current-row="false">
+							<el-table-column type="index" label="排名" :width="appwidth*0.06"></el-table-column>
+      						<el-table-column prop="_id"  label="名称" :width="appwidth*0.12"></el-table-column>
+							<el-table-column prop="addrow" label="提交行数" :width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="removerow" label="删除行数" width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="commit" label="提交次数" width="appwidth*0.06"></el-table-column>
+    					</el-table>
+						<br />
+					</div>
+				</el-col>
+			</el-row>
+			
+		</div>
+	</script>
+	
+	
+	<script>
+		Vue.component('projectstats', {
+			props: {
+				pbsid: [Number, String],
+				appwidth: [Number, String],
+				appheight: [Number, String],
+				currentidx: [Number, String]
+			},
+			template: "#branchStats-template",
+			data: function (){
+				return {
+					statsData:[],
+					statsByUserData:[],
+					totalRow:0,
+					totalAddRow:0,
+					totalDelRow:0,
+					totalCommits:0,
+					childinterval:'',
+					unit: 'YMD'
+				}
+			},
+			watch: {
+				unit: function(newUnit){
+					this.unit=newUnit;
+					this.getStatsData();
+				}
+			},
+			methods: {
+				getStatsData(){
+					var self=this;
+					axios.get('/project/projectBranchStats/'+self.pbsid+'/byDay?dateformat='+self.unit).then(function (response) {
+		    			self.statsData= response.data.data.data;
+		    			self.totalRow = response.data.data.totalRow;
+		    			self.totalAddRow = response.data.data.totalAddRow;
+		    			self.totalDelRow = response.data.data.totalDelRow;
+						self.totalCommits=response.data.data.totalCommits;
+		    			self.showStatsData(self.statsData);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取projectBranchStats异常',
+		        	          message: error
+		        	    });
+		    		});
+				},
+				getStatsByUserData(){
+					var self=this;
+					axios.get('/project/projectBranchStats/'+self.pbsid+"/byUser").then(function (response) {
+		    			// self.statsByUserData = response.data.data.data;
+		    			// 获取前 10 的数据
+		    			self.statsByUserData = [];
+		    			for(var i=0;i<10;i++){
+		    				var info= response.data.data.data[i];
+		    				if(info){
+		    					self.statsByUserData.push(info);
+		    				}else{
+		    					self.statsByUserData.push({_id:null,addrow:null,removerow:null,commit:null});
+		    				}
+		    			}
+		    			//console.log( self.statsByUserData);
+		    			// self.showStatsDataByUser(self.statsByUserData)
+		    			// console.log(self.statsByUserData);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取projectBranchStatsByuser异常',
+		        	          message: error
+		        	    });
+		    		});
+				},
+				showStatsData(data){
+					// console.log(data);
+					var days=[],addrows=[],removerows=[],commits=[];
+					for(var i in data){
+						days.push(data[i]._id);
+						addrows.push(data[i].addrow);
+						removerows.push(data[i].removerow);
+						commits.push(data[i].commit);
+					}
+					var myChart = echarts.init(document.getElementById('branchStats_ALL_'+this.pbsid));
+			document.getElementById("branchStats_RAGE_"+this.pbsid).style.backgroundColor=parseInt(this.currentidx%2)==0?'black':'white';
+			document.getElementById("branchStats_RAGE_"+this.pbsid).style.color=parseInt(this.currentidx%2)==0?'white':'black';
+			document.getElementById("table_"+this.pbsid).style.backgroundColor=parseInt(this.currentidx%2)==0?'black':'white';
+			document.getElementById("table_"+this.pbsid).style.color=parseInt(this.currentidx%2)==0?'white':'black';
+					var option = {
+							backgroundColor:parseInt(this.currentidx%2)==0?'black':'white',
+						    grid: {
+								left:'7%',
+								right:'2%'
+							},
+				            title: { text: '每日代码提交量',
+							textStyle:{
+								color:parseInt(this.currentidx%2)==0?'white':'black'
+							},
+								padding:0,
+								top:20,
+								left:45
+							},
+				            // tooltip: {},
+				            legend: { data:['添加行数','删除行数'], left: 'center',bottom:'10',textStyle:{
+								color:parseInt(this.currentidx%2)==0?'white':'black'
+							}},
+				            xAxis: {
+								data: days,
+								axisLine:{
+									symbol:"arrow",
+//									symbolSize:[10,15],
+									lineStyle:{
+										color:parseInt(this.currentidx%2)==0?"#3C3C3C":"#d0d0d0"
+									}
+								},
+								axisTick:{
+									length:3
+								},
+								axisLabel:{
+									show:true,
+									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000"
+								}
+							},
+				            yAxis: {
+								splitLine:{
+									show:true,
+									interval:'auto',
+									lineStyle:{
+										color:parseInt(this.currentidx%2)==0?"#272727":"#d0d0d0",
+										width:1,
+										type:'dotted',
+										opacity:0.5
+									}
+								},
+								axisLine:{
+									symbol:"arrow",
+//									symbolSize:[10,15],
+									lineStyle:{
+										color:parseInt(this.currentidx%2)==0?"#000000":"#FFFFFF"
+									}
+								},
+								axisLabel:{
+									show:true,
+									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000"
+								},
+								axisTick:{
+									length:0
+								}
+							},
+				            series: [
+								{
+									name: '添加行数',
+									type: 'line',
+									data: addrows,
+									symbol:'circle',
+									symbolSize:'5'
+								},
+				            	{
+									name: '删除行数',
+									type: 'line',
+									data: removerows,
+									symbol:'circle',
+									symbolSize:'5'
+								}
+							],
+							color:parseInt(this.currentidx%2)==0?['#ed7200','#ee45bd']:["#0585ff","#2dc35c"],
+						graphic:[{
+								type: 'image',
+								left:20,
+								top:20,
+								style: {
+									image:parseInt(this.currentidx%2)==0?'http://localhost:8081/img/stats-white.svg':'http://localhost:8081/img/stats-black.svg',
+//									x: 100,
+//									y: 200,
+									width: 20
+//									height: 18
+//									opacity: 0.4
+								}
+							}
+						]
+				        };
+					myChart.setOption(option);
+				},
+				getAllId(id){
+					return "branchStats_ALL_"+id;
+				},
+				getTableId(id){
+					return "table_"+id;
+				},
+				getRageId(id){
+					return "branchStats_RAGE_"+id;
+				},
+				getRageClass(id){
+					return "rage"+id%2;
+				},
+				init(){
+			console.log(this.pbsid + "init" + new Date());
+//			document.getElementById('branchStats_ALL_'+this.pbsid).style.width=this.appwidth*590/1236+'px';
+
+//			document.getElementById('branchStats_ALL_'+this.pbsid).style.marginLeft=this.appwidth*55/1236+'px';
+//			document.getElementById('branchStats_RAGE_'+this.pbsid).style.marginLeft=this.appwidth*105/1236+'px';
+
+//			document.getElementById('leftBlank_'+this.pbsid).style.width=this.appwidth*55/1236+'px';
+//			document.getElementById('middleBlank_'+this.pbsid).style.width=this.appwidth*105/1236+'px';
+
+//			document.getElementById('branchStats_RAGE_'+this.pbsid).style.width=this.appwidth*489/1236+'px';
+
+//			console.log("*****************apwidth="+this.appwidth+";************realWidth="+this.appwidth*590/1237);
+//			console.log("*******************appheight="+this.appheight+"***********realheight="+this.appheight*370/623);
+//			document.getElementById('branchStats_ALL_'+this.pbsid).style.height=this.appheight*370/623+'px';
+//			document.getElementById('branchStats_RAGE_'+this.pbsid).style.height=this.appheight*522/623+'px';
+					this.getStatsData();
+					this.getStatsByUserData();
+				},
+			},
+			mounted(){
+				this.init();
+				this.childinterval = setInterval(() => this.init(), 30000);
+			},
+		    beforeDestroy: function () {
+			    clearInterval(this.childinterval);
+			}
+		});
+	
+		new Vue({
+			el : '#app',
+			data : function() {
+				return {
+					activeIndex: '1',
+					projects: [],
+					appheight: '600',
+					appwidth: 0,
+					myinterval: null,
+				}
+			},
+		    methods: {
+		    	getProject(){
+			var self=this;
+			this.getWinheight();
+			this.getWinWidth();
+		    		axios.get('/project/?limit=1').then(function (response) {
+		    			self.projects = [];
+		    			self.projects = response.data.data;
+		    			// console.log(self.projects);
+		    		}).catch(function (error) {
+		    			console.log(error);
+		        		self.$notify.error({
+		        	          title: '获取project异常',
+		        	          message: error
+		        	    });
+		    		});
+		    	},
+		    	getWinheight(){
+			    	var winHeight = null;
+			    	//获取窗口高度 
+			    	if (window.innerHeight) 
+			    		winHeight = window.innerHeight; 
+			    	else if ((document.body) && (document.body.clientHeight)) 
+			    		winHeight = document.body.clientHeight; 
+			    	//通过深入Document内部对body进行检测，获取窗口大小 
+			    	if (document.documentElement && document.documentElement.clientHeight) 
+			    		winHeight = document.documentElement.clientHeight; 
+			    	this.appheight = winHeight;
+		    	},
+		    	getWinWidth(){
+			    	var winWidth = null;
+			    	//获取窗口高度 
+			    	if (window.innerWidth) 
+			    		winWidth = window.innerWidth; 
+			    	else if ((document.body) && (document.body.clientWidth)) 
+			    		winWidth = document.body.clientWidth; 
+			    	//通过深入Document内部对body进行检测，获取窗口大小 
+			    	if (document.documentElement && document.documentElement.clientWidth) 
+			    		winWidth = document.documentElement.clientWidth; 
+			    	this.appwidth = winWidth;
+		    	},
+		    }, 
+		    mounted () {
+			   console.log("init");
+			   this.getProject();
+			   this.myinterval = setInterval(() => this.getProject(), this.projects.length==0?60000:this.projects.length*1000);
+		    },
+		    beforeDestroy: function () {
+		       clearInterval(this.myinterval);
+		    }
+		})
+	</script>
+</body>
+</html>

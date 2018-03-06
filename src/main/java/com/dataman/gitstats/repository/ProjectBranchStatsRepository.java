@@ -15,7 +15,7 @@ public interface ProjectBranchStatsRepository extends MongoRepository<ProjectBra
 
 	public ProjectBranchStats findByWeburlAndBranch(String weburl,String branch);
 //
-//	public Long deleteByProjectid(String projectid);
+	public Long deleteByGroupId(String groupId);
 //
 //	public List<ProjectBranchStats> findByProjectidIn(List<String> ids);
 	
