@@ -43,6 +43,7 @@ public class GroupStats {
 	private String showCreatedate;
 	private String dateformat;//日期格式    YMD统计年月日   YM 统计年月  YW  统计年星期
 	private Integer lastDate;//统计最近日期数量，与dateformat联合使用     如dateformat为YMD，lastdate为30，则展示最近30天以天为单位统计
+	private String excludeUser;
 
 	
 	public String getId() {
@@ -197,5 +198,13 @@ public class GroupStats {
 
 	public String getShowStatus(){
 		return this.status==0?"正在初始化":this.status==-1?"初始化出错":"初始化完成";
+	}
+
+	public String getExcludeUser() {
+		return excludeUser;
+	}
+
+	public void setExcludeUser(String excludeUser) {
+		this.excludeUser = excludeUser;
 	}
 }

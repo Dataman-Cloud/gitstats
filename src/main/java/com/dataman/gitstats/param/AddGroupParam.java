@@ -15,6 +15,7 @@ public class AddGroupParam {
     private Integer lastDate;//统计最近日期数量，与dateformat联合使用     如dateformat为YMD，lastdate为30，则展示最近30天以天为单位统计
     private List<ProjectWithBranches> include;
     private List<ProjectWithBranches> exclude;
+    private String excludeUser;
 
     public String getAccountid() {
         return accountid;
@@ -78,5 +79,13 @@ public class AddGroupParam {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getExcludeUser() {
+        return excludeUser;
+    }
+
+    public void setExcludeUser(String excludeUser) {
+        this.excludeUser = excludeUser;
     }
 }

@@ -186,6 +186,7 @@ public class AsyncTask {
 		projectBranchStats.setBranch(branch.getName());
 		projectBranchStats.setStatus(0);
 		projectBranchStats.setLastupdate(new Date());
+		projectBranchStats.setCreatedate(projectStats.getCreatedAt());
 		projectBranchStats.setProjectNameWithNamespace(projectStats.getProjectNameWithNamespace());
 		projectBranchStats.setAccountid(groupStats.getAccountid());
 		projectBranchStats.setCreatedAt(projectStats.getCreatedAt());
@@ -375,6 +376,7 @@ public class AsyncTask {
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
 				pbs.setLastupdate(cal.getTime());
+				pbs.setTotalCommits(page.getTotalItems());
 				projectBranchStatsRepository.save(pbs);  //保存跟新记录
 				logger.info("update success");
 				long usetime = begin-System.currentTimeMillis();
@@ -383,11 +385,13 @@ public class AsyncTask {
 				Integer pageNum=0;
 				boolean hasNext=true;
 				List<CommitStatsVo> commits=new ArrayList<CommitStatsVo>();
+				int totalCommits=0;
 				while (hasNext) {
 					List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId,branch,null,null,pageNum,100);
 					if(list.isEmpty()){
 						hasNext=false;
 					}else{
+						totalCommits+=list.size();
 						commits.add(statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(),pbs.getGroupId(), pageNum + 1));
 					}
 					pageNum++;
@@ -401,6 +405,7 @@ public class AsyncTask {
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
 				pbs.setLastupdate(cal.getTime());
+				pbs.setTotalCommits(totalCommits);
 				projectBranchStatsRepository.save(pbs);
 
 				synchronized (this.getClass()){
@@ -409,11 +414,13 @@ public class AsyncTask {
 					projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
 					projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
 					projectStats.setTotalRow(projectStats.getTotalRow()+pbs.getTotalRow());
+					projectStats.setTotalCommits(projectStats.getTotalCommits()+pbs.getTotalCommits());
 					projectRepository.save(projectStats);
 					GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
 					groupStats.setTotalAddRow(groupStats.getTotalAddRow()+pbs.getTotalAddRow());
 					groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
 					groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
+					groupStats.setTotalCommits(groupStats.getTotalCommits()+pbs.getTotalCommits());
 					groupStatsRepository.save(groupStats);
 					logger.info("=========================curret thread's id="+Thread.currentThread().getId()+"==============end");
 				}

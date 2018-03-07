@@ -249,7 +249,10 @@ public class GroupService {
 		if(param.getId()==null || groupStats==null){
 			throw new Exception("参数错误");
 		}
-		if(groupStats.getAccountid().equals(param.getAccountid())&&param.getGroupId().equals(groupStats.getGroupId())&& JSON.toJSONString(param.getInclude()).equals(JSON.toJSONString(groupStats.getInclude()))&&JSON.toJSONString(param.getExclude()).equals(JSON.toJSONString(groupStats.getExclude()))){
+		if(groupStats.getAccountid().equals(param.getAccountid())&&
+				param.getGroupId().equals(groupStats.getGroupId())&&
+				JSON.toJSONString(param.getInclude()).equals(JSON.toJSONString(groupStats.getInclude()))&&
+				JSON.toJSONString(param.getExclude()).equals(JSON.toJSONString(groupStats.getExclude()))){
 			ClassUitl.copyProperties(param,groupStats);
 			groupStats.setLastupdate(new Date());
 			groupStatsRepository.save(groupStats);
@@ -334,6 +337,7 @@ public class GroupService {
 		);
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();
+		list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
 		return list;
 	}
 	

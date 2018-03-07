@@ -100,7 +100,7 @@
   ]'></el-input>
                 </el-form-item>
 
-                <el-form-item label="排除项目列表" prop="exclude">
+                <el-form-item label="排除项目列表">
                     <el-input type="textarea" :rows="8" v-model="parseExclude" placeholder='如：
    [
     {
@@ -112,9 +112,15 @@
   ]'></el-input>
                 </el-form-item>
 
-				<el-form-item label="项目中文名" prop="">
+				<el-form-item label="项目中文名">
 					<el-input v-model="gitlab_group.viewName" placeholder="请输入在报表页展示的项目名称"></el-input>
 				</el-form-item>
+                <el-form-item label="排除统计用户">
+                    <el-input v-model="gitlab_group.excludeUser" placeholder="请输入排除统计用户名称，以逗号间隔"></el-input>
+                </el-form-item>
+                <!--<el-form-item label="首页轮播时间">-->
+                    <!--<el-input v-model="gitlab_group.interval" placeholder="请输入轮播时间（以秒为单位），缺省为10秒"></el-input>-->
+                <!--</el-form-item>-->
 <!--
 				<el-form-item label="统计时间单位">
 					<el-select v-model="gitlab_project.dateformat" placeholder="请选择统计单位" :no-data-text="emptyText">
@@ -192,7 +198,15 @@
                 },
                 set: function(value){
                     if(value!=null&&value.length>0){
-                        this.gitlab_group.include=JSON.parse(value);
+                        try{
+                            this.gitlab_group.include=JSON.parse(value);
+                        }catch(error){
+                            this.$notify.error({
+                                title: '包含项目列表不规范，请参照模板重新编辑',
+                                message: error.name+":"+error.message
+                            });
+                        }
+
                     }else{
                         this.gitlab_group.include=null;
                     }
@@ -208,7 +222,14 @@
                 },
                 set: function(value){
                     if(value!=null&&value.length>0){
-                        this.gitlab_group.exclude=JSON.parse(value);
+                        try{
+                            this.gitlab_group.exclude=JSON.parse(value);
+                        }catch(error){
+                            this.$notify.error({
+                                title: '排除项目列表不规范，请参照模板重新编辑',
+                                message: error.name+":"+error.message
+                            });
+                        }
                     }else{
                         this.gitlab_group.exclude=null;
                     }

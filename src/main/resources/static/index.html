@@ -118,6 +118,17 @@ a {
 .el-radio-button__inner:hover{
 	color:white;
 }
+.el-table th>div:first-child{
+	padding-left: 0px;
+	padding-right: 0px;
+	white-space: nowrap;overflow: hidden;
+}
+.el-table th:first-child>div:first-child{
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+
 </style>
 </head>
 <body>
@@ -234,17 +245,19 @@ a {
 
 							</el-row>
 				</el-col>
-  				<el-col :span="10" :offset="2">
-					<div  :id="getRageId(groupid)" :style="'width:'+appwidth*489/1237+'px;border-radius: 5px;padding-top: 20px;'" :class="getRageClass(currentidx)">
+  				<el-col :span="10" :offset="1">
+					<div  :id="getRageId(groupid)" :style="'width:'+appwidth*539/1237+'px;border-radius: 5px;padding-top: 20px;'" :class="getRageClass(currentidx)">
 					 <img src="/img/table-white.svg" style="width:20px;margin:5px;float: left;margin-left: 20px;" v-if="parseInt(currentidx%2)==0"/>
 						<img src="/img/table-black.svg" style="width:20px;margin:5px;float: left;" v-if="parseInt(currentidx%2)==1"/>
 						<h3 style="margin-top: 0px;">代码累计提交</h3>
-						<el-table :data="statsByUserData" style="width: 100%;" :id="getTableId(groupid)" :fit=false :highlight-current-row="false">
-							<el-table-column type="index" label="排名" :width="appwidth*0.06"></el-table-column>
-      						<el-table-column prop="_id"  label="名称" :width="appwidth*0.12"></el-table-column>
-							<el-table-column prop="addrow" label="提交行数" :width="appwidth*0.08"></el-table-column>
-							<el-table-column prop="removerow" label="删除行数" width="appwidth*0.08"></el-table-column>
-							<el-table-column prop="commit" label="提交次数" width="appwidth*0.06"></el-table-column>
+						<el-table :data="statsByUserData" style="width: 100%;" :id="getTableId(groupid)"
+								  :fit=false :highlight-current-row="false" :default-sort = "{prop: 'addrow', order: 'descending'}">
+							<el-table-column type="index" sortable label="排名" :width="appwidth*0.06"></el-table-column>
+      						<el-table-column prop="_id"  sortable label="名称" :width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="totalrow" sortable label="总代码行数" :width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="addrow" sortable label="新增行数" :width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="removerow" sortable label="删除行数" width="appwidth*0.08"></el-table-column>
+							<el-table-column prop="commit" sortable label="提交次数" width="appwidth*0.08"></el-table-column>
     					</el-table>
 						<br />
 					</div>
@@ -295,7 +308,7 @@ a {
 		    		}).catch(function (error) {
 		    			console.log(error);
 		        		self.$notify.error({
-		        	          title: '获取projectBranchStats异常',
+		        	          title: '获取应用组异常',
 		        	          message: error
 		        	    });
 		    		});
@@ -309,6 +322,7 @@ a {
 		    			for(var i=0;i<10;i++){
 		    				var info= response.data.data.data[i];
 		    				if(info){
+								info.totalrow=info.addrow-info.removerow;
 		    					self.statsByUserData.push(info);
 		    				}else{
 		    					self.statsByUserData.push({_id:null,addrow:null,removerow:null,commit:null});
@@ -335,6 +349,12 @@ a {
 						commits.push(data[i].commit);
 					}
 					var myChart = echarts.init(document.getElementById('branchStats_ALL_'+this.groupid));
+			var nodes=document.getElementById("branchStats_RAGE_"+this.groupid).getElementsByTagName("table");
+			for(var i=0;i<nodes.length;i++){
+				var node=nodes[i];
+				node.style.width=this.appwidth*539/1237+"px";
+			}
+//			document.getElementById("branchStats_RAGE_"+this.groupid).getElementsByTagName("table")[0].style.width=this.appwidth*489/1237+"px";
 			document.getElementById("branchStats_RAGE_"+this.groupid).style.backgroundColor=parseInt(this.currentidx%2)==0?'black':'white';
 			document.getElementById("branchStats_RAGE_"+this.groupid).style.color=parseInt(this.currentidx%2)==0?'white':'black';
 			document.getElementById("table_"+this.groupid).style.backgroundColor=parseInt(this.currentidx%2)==0?'black':'white';
