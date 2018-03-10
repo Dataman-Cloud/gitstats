@@ -249,7 +249,16 @@ a {
 					<div  :id="getRageId(groupid)" :style="'width:'+appwidth*539/1237+'px;border-radius: 5px;padding-top: 20px;'" :class="getRageClass(currentidx)">
 					 <img src="/img/table-white.svg" style="width:20px;margin:5px;float: left;margin-left: 20px;" v-if="parseInt(currentidx%2)==0"/>
 						<img src="/img/table-black.svg" style="width:20px;margin:5px;float: left;" v-if="parseInt(currentidx%2)==1"/>
-						<h3 style="margin-top: 0px;">代码累计提交</h3>
+						<h3 style="margin-top: 0px;">近
+							<el-select v-model="lastDate"  @change="getStatsByUserData" style="width:60px">
+								<el-option v-for="item in lastDates" :label="item" :value="item">{{item}}
+								</el-option>
+							</el-select>
+							<el-select v-model="dateformat"  @change="getStatsByUserData" style="width:60px">
+								<el-option v-for="item in dateformats" :label="item.key"  :key="item.value" :value="item.value">
+								</el-option>
+							</el-select>
+							代码累计提交</h3>
 						<el-table :data="statsByUserData" style="width: 100%;" :id="getTableId(groupid)"
 								  :fit=false :highlight-current-row="false" :default-sort = "{prop: 'addrow', order: 'descending'}">
 							<el-table-column type="index" sortable label="排名" :width="appwidth*0.06"></el-table-column>
@@ -281,6 +290,12 @@ a {
 				return {
 					statsData:[],
 					statsByUserData:[],
+					lastDates:[1,2,3,4,5,6],
+					dateformats:[{key:'日',value:'YMD'},
+						{key:'月',value:'YM'},
+						{key:'周',value:'YW'}],
+					lastDate:1,
+					dateformat:'YM',
 					totalRow:0,
 					totalAddRow:0,
 					totalDelRow:0,
@@ -315,7 +330,7 @@ a {
 				},
 				getStatsByUserData(){
 					var self=this;
-					axios.get('/groups/groupStats/'+self.groupid+"/byUser").then(function (response) {
+					axios.get('/groups/groupStats/'+self.groupid+'/byUser?dateformat='+self.dateformat+'&lastDate='+self.lastDate).then(function (response) {
 		    			// self.statsByUserData = response.data.data.data;
 		    			// 获取前 10 的数据
 		    			self.statsByUserData = [];

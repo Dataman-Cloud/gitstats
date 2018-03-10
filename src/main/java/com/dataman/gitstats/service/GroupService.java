@@ -98,6 +98,7 @@ public class GroupService {
 		}
 		List<Project> projects=gitLabApi.getGroupApi().getProjects(param.getGroupId());
 		//TODO(注意，这里没有考虑group下面有subgroup的情况，因为gitlab api的相关接口把subgroup和getprojects分开了，如果太平有这种情况需修复该处)
+		//TODO	subgroups接口是只在gitlab10.3版本以后才有的新功能，一般公司都没用到这么高的版本，后期再升级
 		if(param.getInclude()!=null){
 			for(ProjectWithBranches includeProject:param.getInclude()){
 				if(!projects.stream().anyMatch(project -> project.getName().equals(includeProject.getName()))){
@@ -280,10 +281,10 @@ public class GroupService {
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:53:27
 	 */
-	public GroupStatsVo showStatsByUser(String groupId) throws Exception{
+	public GroupStatsVo showStatsByUser(String groupId,MatchOperation match) throws Exception{
 		GroupStats groupStats=groupStatsRepository.findOne(groupId);
 		GroupStatsVo groupStatsVo=ClassUitl.copyProperties(groupStats, new GroupStatsVo());
-		groupStatsVo.setData(statsByUser(groupStats));
+		groupStatsVo.setData(statsByUser(groupStats,match));
 		return groupStatsVo;
 	}
 	/**
@@ -334,6 +335,19 @@ public class GroupService {
 			Aggregation.match(new Criteria("groupId").is(groupStats.getId())),
 			Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow").as("removerow").count().as("commit"),
 			Aggregation.sort(Direction.DESC, "addrow")
+		);
+		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list =ret.getMappedResults();
+		list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
+		return list;
+	}
+	public List<CommitStatsVo> statsByUser(GroupStats groupStats,MatchOperation match){
+		List<CommitStatsVo> list=null;
+		Aggregation agg= Aggregation.newAggregation(
+				match,
+				Aggregation.match(new Criteria("groupId").is(groupStats.getId())),
+				Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow").as("removerow").count().as("commit"),
+				Aggregation.sort(Direction.DESC, "addrow")
 		);
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();

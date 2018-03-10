@@ -148,11 +148,11 @@ public class AsyncTask {
 							initProjectStats2(projectBranchStats,cdl);
 						} catch (Exception e) {
 							logger.error("初始化出错：",e);
-							pool.shutdownNow();
 							GroupStats groupStats2=groupStatsRepository.findOne(groupStats.getId());
 							groupStats2.setStatus(-1);
 							groupStats2.setLastupdate(new Date());
 							groupStatsRepository.save(groupStats2);
+							pool.shutdownNow();
 						}
 					}
 				});

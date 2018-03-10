@@ -90,10 +90,12 @@ public class GroupController extends BaseController {
 
 	@RequestMapping(value="/groupStats/{id}/byUser",method=RequestMethod.GET)
 	@ApiOperation(value = "根据User显示统计数据")
-	public Object showProjectBranchStatsByUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
+	public Object showGroupStatsByUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
+											   @RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
+											   @RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
 
 		try {
-			return setJson(SUCCESS_CODE, groupService.showStatsByUser(id));
+			return setJson(SUCCESS_CODE, groupService.showStatsByUser(id,MongoDateUtil.getGroupOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
 			logger.error("根据User显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());
@@ -125,7 +127,7 @@ public class GroupController extends BaseController {
 
 		try {
 			return setJson(SUCCESS_CODE, groupService.showStatsByUserAndDay(id,MongoDateUtil.getFormat(dateformat)
-					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
+					,MongoDateUtil.getGroupOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
 			logger.error("根据时间和用户显示统计数据异常：", e);
 			return setJson(FAIL_CODE, e.getMessage());

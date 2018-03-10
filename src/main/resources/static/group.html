@@ -169,7 +169,8 @@
                     dateformat:null,
                     lastDate:null,
                     include:null,
-                    exclude:null
+                    exclude:null,
+                    excludeUser:null
                 },
 				dateformats:[{ value: 'YMD', label: '日' }, 
 						{ value: 'YW', label: '周' }, 
@@ -307,6 +308,7 @@
                 this.gitlab_group.viewName=group.viewName;
                 this.gitlab_group.include=group.include;
                 this.gitlab_group.exclude=group.exclude;
+                this.gitlab_group.excludeUser=group.excludeUser;
             },
             del(groupId){
                 var self = this;
@@ -375,6 +377,7 @@
                 this.gitlab_group.include = null;
                 this.gitlab_group.exclude = null;
                 this.gitlab_group.viewName=null;
+                this.gitlab_group.excludeUser=null;
             },
 			getAccounts :function (){
                 var self = this;
