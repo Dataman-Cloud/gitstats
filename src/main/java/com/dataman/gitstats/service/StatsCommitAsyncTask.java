@@ -51,11 +51,16 @@ public class StatsCommitAsyncTask {
 				csp.setBranchId(branchId);
 				Commit sigleCommit= api.getCommitsApi().getCommit(pid, commit.getId());
 				CommitStats stats= sigleCommit.getStats();
-				csp.set_id();
+				csp.set_id(branchId+"_"+commit.getId());
 				csp.setAddRow(stats.getAdditions());
 				csp.setRemoveRow(stats.getDeletions());
 				csp.setCrateDate(new Date());
-				commitStatsRepository.insert(csp);
+				try{//TODO(此处需捕捉唯一索引异常)
+					commitStatsRepository.insert(csp);
+				}catch(DuplicateKeyException e){
+					logger.error("插入数据库异常：",e);
+					continue;
+				}
 				addRow+=stats.getAdditions();
 				removeRow+=stats.getDeletions();
 			}
@@ -89,7 +94,7 @@ public class StatsCommitAsyncTask {
 				Commit sigleCommit= null;
 				sigleCommit=api.getCommitsApi().getCommit(pid, commit.getId());
 				CommitStats stats= sigleCommit.getStats();
-				csp.set_id();
+				csp.set_id(groupId+"_"+commit.getId());
 				csp.setGroupId(groupId);
 				csp.setAddRow(stats.getAdditions());
 				csp.setRemoveRow(stats.getDeletions());
@@ -98,6 +103,7 @@ public class StatsCommitAsyncTask {
 					commitStatsRepository.insert(csp);
 				}catch(DuplicateKeyException e){
 					logger.error("插入数据库异常：",e);
+					continue;
 				}
 
 

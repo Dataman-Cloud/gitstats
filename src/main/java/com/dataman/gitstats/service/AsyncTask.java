@@ -458,6 +458,7 @@ public class AsyncTask {
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
+			commitStats.setId(projectBranchStats.getGroupId()+"_"+commit.getId());
 			commitStats.setBranchId(projectBranchStats.getId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());
@@ -493,6 +494,7 @@ public class AsyncTask {
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
+			commitStats.setId(projectBranchStats.getGroupId()+"_"+commit.getId());
 			commitStats.setBranchId(projectBranchStats.getId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());

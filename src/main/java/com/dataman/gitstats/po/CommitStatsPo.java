@@ -32,8 +32,8 @@ public class CommitStatsPo extends Commit{
 		return _id;
 	}
 
-	public void set_id() {
-		this._id=branchId+"_"+getId();
+	public void set_id(String _id) {
+		this._id=_id;
 	}
 
 	public int getAddRow() {
