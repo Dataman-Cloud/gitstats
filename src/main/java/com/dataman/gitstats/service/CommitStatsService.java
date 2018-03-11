@@ -31,9 +31,9 @@ public class CommitStatsService {
 	public Page<CommitStatsPo> find(String pid,String authorName,Date begin,Date end,int pageSize,int pageNum){
 		PageRequest pageReq=new PageRequest(pageNum, pageSize, new Sort(Direction.DESC,"createdAt"));
 		if(StringUtils.isEmpty(authorName)){
-			return commitStatsRepository.findByBranchIdAndCreatedAtBetween(pid, begin, end, pageReq);
+			return commitStatsRepository.findByGroupIdAndCreatedAtBetween(pid, begin, end, pageReq);
 		}
-		return commitStatsRepository.findByBranchIdAndAuthorNameAndCreatedAtBetween(pid,authorName,begin, end, pageReq);
+		return commitStatsRepository.findByGroupIdAndAuthorNameAndCreatedAtBetween(pid,authorName,begin, end, pageReq);
 	}
 	
 
