@@ -351,7 +351,10 @@ public class GroupService {
 		);
 		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
 		list =ret.getMappedResults();
-		list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
+		if(groupStats.getExcludeUser()!=null){
+			list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
+		}
+
 		return list;
 	}
 	
