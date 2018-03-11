@@ -43,7 +43,8 @@ a {
 				<el-col :span="16" :offset="4">
 				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
 					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item> 
-					<el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item>
+					<!-- <el-menu-item index="2"> <a href="project.html">项目管理</a></el-menu-item> -->
+					<el-menu-item index="3"><a href="group.html">项目组管理</a></el-menu-item>
 				</el-menu>
 				</el-col>
 			</el-row>
@@ -195,7 +196,7 @@ a {
 			el : '#app',
 			data : function() {
 				return {
-					activeIndex: '2',
+					activeIndex: '3',
 					pId: GetQueryString("pId"),
 					users:[],
 					commitPage:{
@@ -242,7 +243,7 @@ a {
 		    	},
 		    	getUsers(){
 		    		var self=this;
-					axios.get('/project/projectBranchStats/'+self.pId+'/users').then(function (response) {
+					axios.get('/groups/groupStats/'+self.pId+'/users').then(function (response) {
 		    			self.users = response.data.data;
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -268,7 +269,7 @@ a {
 		    	getUserStats(param){
 		    		var self=this;
 		    		self.userStats=[];
-		    		axios.get('/project/projectBranchStats/'+self.pId+"/byUserAndDay"+param).then(function (response) {
+		    		axios.get('/groups/groupStats/'+self.pId+"/byUserAndDay"+param).then(function (response) {
 		    			self.userStats = response.data.data.data;
 		    		}).catch(function (error) {
 		    			console.log(error);
@@ -295,7 +296,7 @@ a {
 		       this.getUsers();
 		       this.getCommitPage("?pageNum=0");
 		       this.getUserStats("?1=1");
-			   console.log("int");
+			   console.log("init");
 		    }
 		})
 	</script>
