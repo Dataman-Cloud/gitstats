@@ -1,23 +1,17 @@
 package com.dataman.gitstats.service;
 
-import com.alibaba.fastjson.JSON;
-import com.dataman.gitstats.exception.ApiResultCode;
-import com.dataman.gitstats.exception.BusinessException;
-import com.dataman.gitstats.param.AddGroupParam;
-import com.dataman.gitstats.param.AddProjectParam;
-import com.dataman.gitstats.param.ProjectWithBranches;
-import com.dataman.gitstats.po.CommitStatsPo;
-import com.dataman.gitstats.po.GroupStats;
-import com.dataman.gitstats.po.ProjectBranchStats;
-import com.dataman.gitstats.po.ProjectStats;
-import com.dataman.gitstats.repository.CommitStatsRepository;
-import com.dataman.gitstats.repository.GroupStatsRepository;
-import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
-import com.dataman.gitstats.repository.ProjectRepository;
-import com.dataman.gitstats.util.ClassUitl;
-import com.dataman.gitstats.util.GitlabUtil;
-import com.dataman.gitstats.vo.*;
-import com.sun.xml.internal.bind.v2.TODO;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Branch;
@@ -38,17 +32,24 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.alibaba.fastjson.JSON;
+import com.dataman.gitstats.exception.ApiResultCode;
+import com.dataman.gitstats.exception.BusinessException;
+import com.dataman.gitstats.param.AddGroupParam;
+import com.dataman.gitstats.param.ProjectWithBranches;
+import com.dataman.gitstats.po.CommitStatsPo;
+import com.dataman.gitstats.po.GroupStats;
+import com.dataman.gitstats.po.ProjectBranchStats;
+import com.dataman.gitstats.repository.CommitStatsRepository;
+import com.dataman.gitstats.repository.GroupStatsRepository;
+import com.dataman.gitstats.repository.ProjectBranchStatsRepository;
+import com.dataman.gitstats.repository.ProjectRepository;
+import com.dataman.gitstats.util.ClassUitl;
+import com.dataman.gitstats.util.GitlabUtil;
+import com.dataman.gitstats.vo.CommitStatsVo;
+import com.dataman.gitstats.vo.GroupStatsPlusVo;
+import com.dataman.gitstats.vo.GroupStatsVo;
+import com.dataman.gitstats.vo.StatsByUserByDayVo;
 
 @Service
 public class GroupService {
@@ -121,9 +122,9 @@ public class GroupService {
 				groupStats=new GroupStats();
 				ClassUitl.copyProperties(param,groupStats);
 				if(groupStats.getViewName()==null){
-					groupStats.setViewName(group.getFullName());
+					groupStats.setViewName(group.getName());
 				}
-				groupStats.setName(group.getFullName());
+				groupStats.setName(group.getName());
 				groupStats.setFullPath(group.getFullPath());
 				groupStats.setPath(group.getPath());
 				groupStats.setId(param.getAccountid()+"_"+param.getGroupId());

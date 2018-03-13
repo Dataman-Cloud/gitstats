@@ -83,7 +83,7 @@
 
 				<el-form-item label="项目组名称" prop="groupId">
 					<el-select v-model.number="gitlab_group.groupId" placeholder="请选择统计项目组"  :no-data-text="emptyText">
-						<el-option v-for="item in account_groups" :label="item.fullName" :value="item.id" >
+						<el-option v-for="item in account_groups" :label="item.name" :value="item.id" >
 						</el-option>
 					</el-select>
 				</el-form-item>
