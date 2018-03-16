@@ -182,7 +182,17 @@ a {
 				var option = {
 						legend: { data:['添加行数','删除行数']},
 			            xAxis: { data: days },
-			            yAxis: {  },
+			            yAxis: { axisLabel:{
+			            	formatter: function(value) {
+								if(value >= 10000){
+									if (value >= 10000 * 1000){
+										return (value/(10000*1000)).toFixed(1) + "千万"
+									}
+									return (value/10000).toFixed(1) + "万"
+								} 
+								return value
+							}
+			            }},
 			            series: [{ name: '添加行数', type: 'line', data: addrows }
 			            	,{ name: '删除行数', type: 'line', data: removerows }]
 			        };
