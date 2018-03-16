@@ -102,7 +102,7 @@ public class StatsCommitAsyncTask {
 				try{//TODO(此处需捕捉唯一索引异常)
 					commitStatsRepository.insert(csp);
 				}catch(DuplicateKeyException e){
-					logger.error("插入数据库异常：",e);
+					// logger.error("插入数据库异常：",e);
 					continue;
 				}
 
