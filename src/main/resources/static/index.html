@@ -334,9 +334,6 @@ a {
 		    			// self.statsByUserData = response.data.data.data;
 		    			// 获取前 10 的数据
 		    			self.statsByUserData = [];
-		    			
-		    			
-		    			
 		    			for(var i=0;i<10;i++){
 		    				var info= response.data.data.data[i];
 		    				if(info){
@@ -432,7 +429,16 @@ a {
 								},
 								axisLabel:{
 									show:true,
-									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000"
+									color:parseInt(this.currentidx%2)==0?"#8E8E8E":"#000000",
+									formatter: function(value) {
+										if(value >= 10000){
+											if (value >= 10000 * 1000){
+												return (value/(10000*1000)).toFixed(1) + "千万"
+											}
+											return (value/10000).toFixed(1) + "万"
+										} 
+										return value
+									}
 								},
 								axisTick:{
 									length:0
