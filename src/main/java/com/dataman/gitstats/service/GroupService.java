@@ -65,7 +65,7 @@ public class GroupService {
 	private ProjectRepository projectRepository;
 	@Autowired
 	MongoTemplate mongoTemplate;
-	
+
 	@Autowired
 	AsyncTask asyncTask;
 
@@ -74,60 +74,66 @@ public class GroupService {
 
 	@Autowired
 	private WebHookService webHookService;
-	
+
 	SimpleDateFormat formatter = new SimpleDateFormat("YYYY-MM-DD");
-	
-	//释放开启日期自动补充
+
+	// 释放开启日期自动补充
 	@Value("${gitstats.autofill}")
 	private boolean autofill;
-	
+
 	/**
 	 * @method addProject(添加需要统计的项目)
 	 * @return int
 	 * @author liuqing
-	 * @throws Exception 
+	 * @throws Exception
 	 * @date 2017年9月19日 下午3:12:39
 	 */
-	public int addGroup(AddGroupParam param,String webHookUrl) throws Exception{
-		int SUCCESS=0,EXISTED=1,NOTEXIST=2;
-		Calendar cal=Calendar.getInstance();
-		//验证是否 存在于 gitlab
-		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(param.getAccountid());
-		Group group=gitLabApi.getGroupApi().getGroup(param.getGroupId());
-		if(group==null){
+	public int addGroup(AddGroupParam param, String webHookUrl) throws Exception {
+		int SUCCESS = 0, EXISTED = 1, NOTEXIST = 2;
+		Calendar cal = Calendar.getInstance();
+		// 验证是否 存在于 gitlab
+		GitLabApi gitLabApi = gitlabUtil.getGitLabApi(param.getAccountid());
+		Group group = gitLabApi.getGroupApi().getGroup(param.getGroupId());
+		if (group == null) {
 			return NOTEXIST;
 		}
-		List<Project> projects=gitLabApi.getGroupApi().getProjects(param.getGroupId());
-		//TODO(注意，这里没有考虑group下面有subgroup的情况，因为gitlab api的相关接口把subgroup和getprojects分开了，如果太平有这种情况需修复该处)
-		//TODO	subgroups接口是只在gitlab10.3版本以后才有的新功能，一般公司都没用到这么高的版本，后期再升级
-		if(param.getInclude()!=null){
-			for(ProjectWithBranches includeProject:param.getInclude()){
-				if(!projects.stream().anyMatch(project -> project.getName().equals(includeProject.getName()))){
-					throw new BusinessException(ApiResultCode.ERR_PARAMETER.getCode(),ApiResultCode.ERR_PARAMETER.getMessage()+"the include's project "+includeProject.getName()+"不存在");
+		List<Project> projects = gitLabApi.getGroupApi().getProjects(param.getGroupId());
+		// TODO(注意，这里没有考虑group下面有subgroup的情况，因为gitlab
+		// api的相关接口把subgroup和getprojects分开了，如果太平有这种情况需修复该处)
+		// TODO subgroups接口是只在gitlab10.3版本以后才有的新功能，一般公司都没用到这么高的版本，后期再升级
+		if (param.getInclude() != null) {
+			for (ProjectWithBranches includeProject : param.getInclude()) {
+				if (!projects.stream().anyMatch(project -> project.getName().equals(includeProject.getName()))) {
+					throw new BusinessException(ApiResultCode.ERR_PARAMETER.getCode(),
+							ApiResultCode.ERR_PARAMETER.getMessage() + "the include's project "
+									+ includeProject.getName() + "不存在");
 				}
-				if(includeProject.getBranches()!=null){
-					List<Branch> branches=gitLabApi.getRepositoryApi().getBranches(gitLabApi.getProjectApi().getProject(group.getFullPath(),includeProject.getName()).getId());
-					for(String branchName:includeProject.getBranches()){
-						if(!branches.stream().anyMatch(branch -> branch.getName().equals(branchName))){
-							throw new BusinessException(ApiResultCode.ERR_PARAMETER.getCode(),ApiResultCode.ERR_PARAMETER.getMessage()+"the include's project "+includeProject.getName()+"  "+branchName+"不存在");
+				if (includeProject.getBranches() != null) {
+					List<Branch> branches = gitLabApi.getRepositoryApi().getBranches(gitLabApi.getProjectApi()
+							.getProject(group.getFullPath(), includeProject.getName()).getId());
+					for (String branchName : includeProject.getBranches()) {
+						if (!branches.stream().anyMatch(branch -> branch.getName().equals(branchName))) {
+							throw new BusinessException(ApiResultCode.ERR_PARAMETER.getCode(),
+									ApiResultCode.ERR_PARAMETER.getMessage() + "the include's project "
+											+ includeProject.getName() + "  " + branchName + "不存在");
 						}
 					}
 				}
 
 			}
 		}
-		GroupStats groupStats=groupStatsRepository.findOne(group.getWebUrl()+"_"+param.getGroupId());
-		if(groupStats==null){
-			try{
-				groupStats=new GroupStats();
-				ClassUitl.copyProperties(param,groupStats);
-				if(groupStats.getViewName()==null){
+		GroupStats groupStats = groupStatsRepository.findOne(group.getWebUrl() + "_" + param.getGroupId());
+		if (groupStats == null) {
+			try {
+				groupStats = new GroupStats();
+				ClassUitl.copyProperties(param, groupStats);
+				if (groupStats.getViewName() == null) {
 					groupStats.setViewName(group.getName());
 				}
 				groupStats.setName(group.getName());
 				groupStats.setFullPath(group.getFullPath());
 				groupStats.setPath(group.getPath());
-				groupStats.setId(param.getAccountid()+"_"+param.getGroupId());
+				groupStats.setId(param.getAccountid() + "_" + param.getGroupId());
 				groupStats.setWebUrl(group.getWebUrl());
 				groupStats.setStatus(0);
 				groupStats.setTotalAddRow(0);
@@ -135,73 +141,92 @@ public class GroupService {
 				groupStats.setTotalRow(0);
 				groupStats.setCreatedate(cal.getTime());
 				groupStats.setLastupdate(cal.getTime());
-				groupStats=groupStatsRepository.insert(groupStats);
+				groupStats = groupStatsRepository.insert(groupStats);
 				asyncTask.initGroupStats(groupStats);
-				addWebHook(groupStats,gitLabApi,webHookUrl);
-			}catch (Exception e){
-				logger.error("初始化项目分支异常：",e);
+				addWebHook(groupStats, gitLabApi, webHookUrl);
+			} catch (Exception e) {
+				logger.error("初始化项目分支异常：", e);
 			}
 
-		}else{
+		} else {
 			return EXISTED;
 		}
 		return SUCCESS;
 	}
 
-	private void addWebHook(GroupStats groupStats,GitLabApi gitLabApi,String webHookUrl) throws Exception {
-		if(groupStats.getInclude()!=null){
-			List<String> includeProjects=groupStats.getInclude().stream().map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-			List<Project> allProjects=gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
-			for(Project project:allProjects){
-				if(includeProjects.contains(project.getName())){
-					if(!checkWebhookStats(groupStats.getAccountid(),project.getId(),webHookUrl)){
-						webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(),project.getId(),webHookUrl);
-					}
-				}
-			}
-		}else{
-			if(groupStats.getExclude()!=null){
-				List<Project> allProjects=gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
-				List<String> excludeProjects=groupStats.getExclude().stream()
-						.filter(projectWithBranches -> projectWithBranches.getBranches()!=null)
-						.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-				for(Project project:allProjects){
-					if(!excludeProjects.contains(project.getName())){
-						if(!checkWebhookStats(groupStats.getAccountid(),project.getId(),webHookUrl)){
-							webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(),project.getId(),webHookUrl);
-						}
-					}
-				}
-			}
-
-
+	private void addWebHook(GroupStats groupStats, GitLabApi gitLabApi, String webHookUrl) throws Exception {
+//		if (groupStats.getInclude() != null) {
+//			List<String> includeProjects = groupStats.getInclude().stream()
+//					.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+//			List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+//			for (Project project : allProjects) {
+//				if (includeProjects.contains(project.getName())) {
+//					if (!checkWebhookStats(groupStats.getAccountid(), project.getId(), webHookUrl)) {
+//						webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),
+//								webHookUrl);
+//					}
+//				}
+//			}
+//		} else {
+//			if (groupStats.getExclude() != null) {
+//				List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+//				List<String> excludeProjects = groupStats.getExclude().stream()
+//						.filter(projectWithBranches -> projectWithBranches.getBranches() != null)
+//						.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+//				for (Project project : allProjects) {
+//					if (!excludeProjects.contains(project.getName())) {
+//						if (!checkWebhookStats(groupStats.getAccountid(), project.getId(), webHookUrl)) {
+//							webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),
+//									webHookUrl);
+//						}
+//					}
+//				}
+//			}
+//
+//		}
+		// 获取所有 
+		List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+		List<String> includeProjects = groupStats.getInclude().stream()
+				.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+		// 刷选 包含的
+		if(!includeProjects.isEmpty()){
+			allProjects =allProjects.stream().filter(project -> includeProjects.contains(project.getName())).collect(Collectors.toList());
+		}
+		List<String> excludeProjects = groupStats.getExclude().stream()
+				.filter(projectWithBranches -> projectWithBranches.getBranches() != null)
+				.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+		// 过滤 排除的
+		allProjects = allProjects.stream().filter(project -> !excludeProjects.contains(project.getName())).collect(Collectors.toList());
+		// 遍历添加 
+		for (Project project : allProjects) {
+			webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),webHookUrl);
 		}
 	}
 
-	boolean checkWebhookStats(String aid,int pid,String webHookUrl) throws GitLabApiException{
-		boolean flag=false;
-		GitLabApi gitLabApi= gitlabUtil.getGitLabApi(aid);
-		List<ProjectHook> hooks= gitLabApi.getProjectApi().getHooks(pid);
-		if(!hooks.isEmpty()){
-			flag=hooks.stream().anyMatch(hook->hook.getUrl().equals(webHookUrl));
+	boolean checkWebhookStats(String aid, int pid, String webHookUrl) throws GitLabApiException {
+		boolean flag = false;
+		GitLabApi gitLabApi = gitlabUtil.getGitLabApi(aid);
+		List<ProjectHook> hooks = gitLabApi.getProjectApi().getHooks(pid);
+		if (!hooks.isEmpty()) {
+			flag = hooks.stream().anyMatch(hook -> hook.getUrl().equals(webHookUrl));
 		}
 		return flag;
 	}
-	
-	public ProjectBranchStats findProjectBranchStatsById(String id){
+
+	public ProjectBranchStats findProjectBranchStatsById(String id) {
 		return projectBranchStatsRepository.findOne(id);
 	}
 
-	public List<GroupStats> getAllGroupStats(String limit){
+	public List<GroupStats> getAllGroupStats(String limit) {
 		if (StringUtils.isEmpty(limit)) {
 			return groupStatsRepository.findAll();
-		}else{
+		} else {
 			return groupStatsRepository.findByStatus(1);
 		}
-		
+
 	}
 
-	public void deleteGroupStats(String id){
+	public void deleteGroupStats(String id) {
 		groupStatsRepository.delete(id);
 		projectRepository.deleteByGroupId(id);
 		projectBranchStatsRepository.deleteByGroupId(id);
@@ -210,331 +235,352 @@ public class GroupService {
 
 	/**
 	 * @method: resetProjectBranchStats
-	 * @Description	重置项目，清空数据并重新初始化
+	 * @Description 重置项目，清空数据并重新初始化
 	 * @author biancl
 	 * @date 2017-10-15 10:17
 	 * @param [id]
 	 * @return void
 	 */
-	public void resetGroupStats(String id,String webHookUrl) throws Exception {
-		GroupStats groupStats=groupStatsRepository.findOne(id);
-		try{
+	public void resetGroupStats(String id, String webHookUrl) throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(id);
+		try {
 			projectRepository.deleteByGroupId(id);
 			projectBranchStatsRepository.deleteByGroupId(id);
-			commitStatsRepository.deleteByGroupId(id);//删除已同步的commit
+			commitStatsRepository.deleteByGroupId(id);// 删除已同步的commit
 			groupStats.setStatus(0);
 			groupStats.setTotalRow(0);
 			groupStats.setTotalDelRow(0);
 			groupStats.setTotalAddRow(0);
 			groupStatsRepository.save(groupStats);
 			asyncTask.initGroupStats(groupStats);
-			addWebHook(groupStats,gitlabUtil.getGitLabApi(groupStats.getAccountid()),webHookUrl);
-		}catch (Exception e){
-			logger.error("重置项目分支异常：",e);
+			addWebHook(groupStats, gitlabUtil.getGitLabApi(groupStats.getAccountid()), webHookUrl);
+		} catch (Exception e) {
+			logger.error("重置项目分支异常：", e);
 			groupStats.setStatus(-1);
 			groupStatsRepository.save(groupStats);
 		}
 
 	}
+
 	/**
 	 * @method getProAllAuthorName(获取项目所有提交者)
 	 * @return String[]
 	 * @author liuqing
 	 * @date 2017年10月18日 下午4:42:06
 	 */
-	public List<CommitStatsVo> getProAllAuthorName(String id){
+	public List<CommitStatsVo> getProAllAuthorName(String id) {
 		return proGroupByAuthorName(id);
 	}
 
-	public void modifyGroupStats(AddGroupParam param,String webHookUrl) throws Exception{
-		GroupStats groupStats=groupStatsRepository.findOne(param.getId());
-		if(param.getId()==null || groupStats==null){
+	public void modifyGroupStats(AddGroupParam param, String webHookUrl) throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(param.getId());
+		if (param.getId() == null || groupStats == null) {
 			throw new Exception("参数错误");
 		}
-		if(groupStats.getAccountid().equals(param.getAccountid())&&
-				param.getGroupId().equals(groupStats.getGroupId())&&
-				JSON.toJSONString(param.getInclude()).equals(JSON.toJSONString(groupStats.getInclude()))&&
-				JSON.toJSONString(param.getExclude()).equals(JSON.toJSONString(groupStats.getExclude()))){
-			ClassUitl.copyProperties(param,groupStats);
+		if (groupStats.getAccountid().equals(param.getAccountid()) && param.getGroupId().equals(groupStats.getGroupId())
+				&& JSON.toJSONString(param.getInclude()).equals(JSON.toJSONString(groupStats.getInclude()))
+				&& JSON.toJSONString(param.getExclude()).equals(JSON.toJSONString(groupStats.getExclude()))) {
+			ClassUitl.copyProperties(param, groupStats);
 			groupStats.setLastupdate(new Date());
 			groupStatsRepository.save(groupStats);
-		}else{
+		} else {
 			deleteGroupStats(param.getId());
 			addGroup(param, webHookUrl);
 		}
 
 	}
 
-//	public ProjectBranchStats findProjectBranchStatsByProjectIdAndBranch(String projectId,String branch){
-//		return projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
-//	}
+	// public ProjectBranchStats
+	// findProjectBranchStatsByProjectIdAndBranch(String projectId,String
+	// branch){
+	// return
+	// projectBranchStatsRepository.findByProjectidAndBranch(projectId,branch);
+	// }
 
-//	public int delProject(String id){
-//		int SUCCESS=0;
-//		projectRepository.delete(id);
-//		projectBranchStatsRepository.deleteByProjectid(id);
-//		commitStatsRepository.deleteByProid(id);
-//		return SUCCESS;
-//	}
+	// public int delProject(String id){
+	// int SUCCESS=0;
+	// projectRepository.delete(id);
+	// projectBranchStatsRepository.deleteByProjectid(id);
+	// commitStatsRepository.deleteByProid(id);
+	// return SUCCESS;
+	// }
 	/**
 	 * @method showStatsByUser(根据用户查询统计)
 	 * @return ProjectBranchStatsVo
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:53:27
 	 */
-	public GroupStatsVo showStatsByUser(String groupId,MatchOperation match) throws Exception{
-		GroupStats groupStats=groupStatsRepository.findOne(groupId);
-		GroupStatsVo groupStatsVo=ClassUitl.copyProperties(groupStats, new GroupStatsVo());
-		groupStatsVo.setData(statsByUser(groupStats,match));
+	public GroupStatsVo showStatsByUser(String groupId, MatchOperation match) throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(groupId);
+		GroupStatsVo groupStatsVo = ClassUitl.copyProperties(groupStats, new GroupStatsVo());
+		groupStatsVo.setData(statsByUser(groupStats, match));
 		return groupStatsVo;
 	}
+
 	/**
 	 * @method showStatsByDay(根据天查询统计)
 	 * @return ProjectBranchStatsVo
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:53:57
 	 */
-	public GroupStatsVo showStatsByDay(String groupId,String format,MatchOperation match) throws Exception{
-		GroupStats groupStats=groupStatsRepository.findOne(groupId);
-		GroupStatsVo pbsv=ClassUitl.copyProperties(groupStats, new GroupStatsVo());
-		pbsv.setData(statsByDay(groupStats,format,match));
+	public GroupStatsVo showStatsByDay(String groupId, String format, MatchOperation match) throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(groupId);
+		GroupStatsVo pbsv = ClassUitl.copyProperties(groupStats, new GroupStatsVo());
+		pbsv.setData(statsByDay(groupStats, format, match));
 		return pbsv;
 	}
+
 	/**
 	 * @method showStatsByUserAndDay(根据用户和天查询统计)
 	 * @return Object
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:54:28
 	 */
-	public GroupStatsPlusVo showStatsByUserAndDay(String groupId,String format,MatchOperation match) throws Exception{
-		GroupStats groupStats=groupStatsRepository.findOne(groupId);
-		GroupStatsPlusVo groupStatsPlusVo=ClassUitl.copyProperties(groupStats, new GroupStatsPlusVo());
-		groupStatsPlusVo.setData(statsByUserByDay(groupStats,format,match));
+	public GroupStatsPlusVo showStatsByUserAndDay(String groupId, String format, MatchOperation match)
+			throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(groupId);
+		GroupStatsPlusVo groupStatsPlusVo = ClassUitl.copyProperties(groupStats, new GroupStatsPlusVo());
+		groupStatsPlusVo.setData(statsByUserByDay(groupStats, format, match));
 		return groupStatsPlusVo;
 	}
-	
+
 	/**
 	 * @method showStatsByDayAndUser(根据用户和天查询统计)
 	 * @return Object
 	 * @author liuqing
 	 * @date 2017年10月11日 下午4:54:28
 	 */
-	public GroupStatsPlusVo showStatsByDayAndUser(String groupId,String format,MatchOperation match) throws Exception{
-		GroupStats groupStats=groupStatsRepository.findOne(groupId);
-		GroupStatsPlusVo groupStatsPlusVo=ClassUitl.copyProperties(groupStats, new GroupStatsPlusVo());
-		groupStatsPlusVo.setData(statsByDayByUser(groupStats,format,match));
+	public GroupStatsPlusVo showStatsByDayAndUser(String groupId, String format, MatchOperation match)
+			throws Exception {
+		GroupStats groupStats = groupStatsRepository.findOne(groupId);
+		GroupStatsPlusVo groupStatsPlusVo = ClassUitl.copyProperties(groupStats, new GroupStatsPlusVo());
+		groupStatsPlusVo.setData(statsByDayByUser(groupStats, format, match));
 		return groupStatsPlusVo;
 	}
-	//	db.getCollection('commitStatsPo').aggregate([
-	//	 {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}},
-	//	 {$group:{_id:"$authorName",addrow:{$sum:"$addRow"},removerow:{$sum:"$removeRow"},commit:{$sum:1}}}
-	//	 ,{$sort:{addrow:-1}}
-	//	 ])
-	public List<CommitStatsVo> statsByUser(GroupStats groupStats){
-		List<CommitStatsVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-			Aggregation.match(new Criteria("groupId").is(groupStats.getId())),
-			Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow").as("removerow").count().as("commit"),
-			Aggregation.sort(Direction.DESC, "addrow")
-		);
-		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
-		list =ret.getMappedResults();
-		list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}},
+	// {$group:{_id:"$authorName",addrow:{$sum:"$addRow"},removerow:{$sum:"$removeRow"},commit:{$sum:1}}}
+	// ,{$sort:{addrow:-1}}
+	// ])
+	public List<CommitStatsVo> statsByUser(GroupStats groupStats) {
+		List<CommitStatsVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(Aggregation.match(new Criteria("groupId").is(groupStats.getId())),
+				Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow")
+						.as("removerow").count().as("commit"),
+				Aggregation.sort(Direction.DESC, "addrow"));
+		AggregationResults<CommitStatsVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list = ret.getMappedResults();
+		list = list.stream().filter(commitStatsVo -> groupStats.getExcludeUser().indexOf(commitStatsVo.get_id()) == -1)
+				.collect(Collectors.toList());
 		return list;
 	}
-	public List<CommitStatsVo> statsByUser(GroupStats groupStats,MatchOperation match){
-		List<CommitStatsVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-				match,
+
+	public List<CommitStatsVo> statsByUser(GroupStats groupStats, MatchOperation match) {
+		List<CommitStatsVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(match,
 				Aggregation.match(new Criteria("groupId").is(groupStats.getId())),
-				Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow").as("removerow").count().as("commit"),
-				Aggregation.sort(Direction.DESC, "addrow")
-		);
-		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
-		list =ret.getMappedResults();
-		if(groupStats.getExcludeUser()!=null){
-			list=list.stream().filter(commitStatsVo->groupStats.getExcludeUser().indexOf(commitStatsVo.get_id())==-1).collect(Collectors.toList());
+				Aggregation.group(Fields.fields("$authorName")).sum("$addRow").as("addrow").sum("$removeRow")
+						.as("removerow").count().as("commit"),
+				Aggregation.sort(Direction.DESC, "addrow"));
+		AggregationResults<CommitStatsVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list = ret.getMappedResults();
+		if (groupStats.getExcludeUser() != null) {
+			list = list.stream()
+					.filter(commitStatsVo -> groupStats.getExcludeUser().indexOf(commitStatsVo.get_id()) == -1)
+					.collect(Collectors.toList());
 		}
 
 		return list;
 	}
-	
-//	db.getCollection('commitStatsPo').aggregate([  
-// 	    {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}}
-//	    ,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 }}
-//	    ,{$group   : { _id : "$day",  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
-//	    ,{$sort :{_id : -1}}
-//	])
-	public List<CommitStatsVo> statsByDay(GroupStats groupStats,String dataformat,MatchOperation match){
-		List<CommitStatsVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-			match,
-			Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow").and("$removeRow").as("removeRow"),
-			Aggregation.group(Fields.fields("day")).sum("addRow").as("addrow").sum("removeRow").as("removerow").count().as("commit"),
-			Aggregation.sort(Direction.ASC, "_id")
-		);
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$match:{"proid" : "3ec34ce6b6f64d90afba8009a31a504e","branch" : "dev"}}
+	// ,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow :
+	// 1,removeRow:1 }}
+	// ,{$group : { _id : "$day", addRow : { $sum : "$addRow" } ,removeRow : {
+	// $sum : "$removeRow" },commit:{$sum:1}}}
+	// ,{$sort :{_id : -1}}
+	// ])
+	public List<CommitStatsVo> statsByDay(GroupStats groupStats, String dataformat, MatchOperation match) {
+		List<CommitStatsVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow")
+						.as("addRow").and("$removeRow").as("removeRow"),
+				Aggregation.group(Fields.fields("day")).sum("addRow").as("addrow").sum("removeRow").as("removerow")
+						.count().as("commit"),
+				Aggregation.sort(Direction.ASC, "_id"));
 		System.out.println(agg.toString());
-		
-		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
-		list =ret.getMappedResults();
-		if(autofill){
-			//补充 缺省日期数据  补充 到 当前
-			list =complementDay(list,null);
+
+		AggregationResults<CommitStatsVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list = ret.getMappedResults();
+		if (autofill) {
+			// 补充 缺省日期数据 补充 到 当前
+			list = complementDay(list, null);
 		}
 		return list;
 	}
-	
-//	db.getCollection('commitStatsPo').aggregate([  
-//	{$match:{"proid" : "0670ed0736be4101aab4d679a997977e","branch" : "develop"}}
-//	,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 ,authorName:1}}
-//	,{$group   : { _id : {authorName: "$authorName",day : "$day"},  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
-//	,{$project : {_id :0, authorName : '$_id.authorName', dayinfo : {day : '$_id.day', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
-//	,{$group:{_id:"$authorName", days:{$push:"$dayinfo"}, addrow: {$sum: "$dayinfo.addRow"},removeRow: {$sum: "$dayinfo.removeRow"},commit: {$sum: "$dayinfo.commit"}}}
-//	,{$sort : { addrow : -1 }}
-//	])
-	public List<StatsByUserByDayVo> statsByUserByDay(GroupStats groupStats,String dataformat,MatchOperation match){
-		List<StatsByUserByDayVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-				match,
-				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
-				.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$match:{"proid" : "0670ed0736be4101aab4d679a997977e","branch" :
+	// "develop"}}
+	// ,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow :
+	// 1,removeRow:1 ,authorName:1}}
+	// ,{$group : { _id : {authorName: "$authorName",day : "$day"}, addRow : {
+	// $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}
+	// ,{$project : {_id :0, authorName : '$_id.authorName', dayinfo : {day :
+	// '$_id.day', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
+	// ,{$group:{_id:"$authorName", days:{$push:"$dayinfo"}, addrow: {$sum:
+	// "$dayinfo.addRow"},removeRow: {$sum: "$dayinfo.removeRow"},commit: {$sum:
+	// "$dayinfo.commit"}}}
+	// ,{$sort : { addrow : -1 }}
+	// ])
+	public List<StatsByUserByDayVo> statsByUserByDay(GroupStats groupStats, String dataformat, MatchOperation match) {
+		List<StatsByUserByDayVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow")
+						.as("addRow").and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
 				Aggregation.sort(Direction.DESC, "day"),
-				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
-					.count().as("commit"),
+				Aggregation.group(Fields.fields("authorName", "day")).sum("addRow").as("addRow").sum("removeRow")
+						.as("removeRow").count().as("commit"),
 				Aggregation.project().and("_id.authorName").as("authorName").and("dayinfo")
-					.nested(Aggregation.bind("_id","_id.day").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
+						.nested(Aggregation.bind("_id", "_id.day").and("addrow", "addRow").and("removerow", "removeRow")
+								.and("commit", "commit")),
 				Aggregation.group(Fields.fields("authorName")).sum("dayinfo.addrow").as("addrow")
-					.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit")
-					.push("dayinfo").as("data"),
-				Aggregation.sort(Direction.DESC, "addrow")
-			);
+						.sum("dayinfo.removerow").as("removerow").sum("dayinfo.commit").as("commit").push("dayinfo")
+						.as("data"),
+				Aggregation.sort(Direction.DESC, "addrow"));
 		System.out.println(agg.toString());
-		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
-		list =ret.getMappedResults();
+		AggregationResults<StatsByUserByDayVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class,
+				StatsByUserByDayVo.class);
+		list = ret.getMappedResults();
 		return list;
 	}
-	
-	
-//	db.getCollection('commitStatsPo').aggregate([  
-//	{$match:{"branchId" : "59dad6c94cd6f7d2103db236"}}
-//	,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 ,authorName:1}}
-//	,{$group   : { _id : {authorName: "$authorName",day : "$day"},  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
-//	,{$project : { day : '$_id.day', usersinfo : {user : '$_id.authorName', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
-//	,{$group:{_id:"$day", users:{$push:"$usersinfo"}, addrow: {$sum: "$usersinfo.addRow"},removeRow: {$sum: "$usersinfo.removeRow"},commit: {$sum: "$usersinfo.commit"}}}
-//	,{$sort : { _id : -1 }}
-//	])
-	public List<StatsByUserByDayVo> statsByDayByUser(GroupStats groupStats,String dataformat,MatchOperation match){
-		List<StatsByUserByDayVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-				match,
-				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
-				.and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
-				Aggregation.group(Fields.fields("authorName","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
-					.count().as("commit"),
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$match:{"branchId" : "59dad6c94cd6f7d2103db236"}}
+	// ,{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow :
+	// 1,removeRow:1 ,authorName:1}}
+	// ,{$group : { _id : {authorName: "$authorName",day : "$day"}, addRow : {
+	// $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}
+	// ,{$project : { day : '$_id.day', usersinfo : {user : '$_id.authorName',
+	// addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
+	// ,{$group:{_id:"$day", users:{$push:"$usersinfo"}, addrow: {$sum:
+	// "$usersinfo.addRow"},removeRow: {$sum: "$usersinfo.removeRow"},commit:
+	// {$sum: "$usersinfo.commit"}}}
+	// ,{$sort : { _id : -1 }}
+	// ])
+	public List<StatsByUserByDayVo> statsByDayByUser(GroupStats groupStats, String dataformat, MatchOperation match) {
+		List<StatsByUserByDayVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow")
+						.as("addRow").and("$removeRow").as("removeRow").and("$authorName").as("authorName"),
+				Aggregation.group(Fields.fields("authorName", "day")).sum("addRow").as("addRow").sum("removeRow")
+						.as("removeRow").count().as("commit"),
 				Aggregation.sort(Direction.DESC, "addRow"),
 				Aggregation.project().and("_id.day").as("day").and("usersinfo")
-					.nested(Aggregation.bind("_id","_id.authorName").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
-				Aggregation.group(Fields.fields("day")).sum("usersinfo.addrow").as("addrow")
-					.sum("usersinfo.removerow").as("removerow").sum("usersinfo.commit").as("commit")
-					.push("usersinfo").as("data"),
-				Aggregation.sort(Direction.ASC, "_id")
-			);
+						.nested(Aggregation.bind("_id", "_id.authorName").and("addrow", "addRow")
+								.and("removerow", "removeRow").and("commit", "commit")),
+				Aggregation.group(Fields.fields("day")).sum("usersinfo.addrow").as("addrow").sum("usersinfo.removerow")
+						.as("removerow").sum("usersinfo.commit").as("commit").push("usersinfo").as("data"),
+				Aggregation.sort(Direction.ASC, "_id"));
 		System.out.println(agg.toString());
-		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
-		list =ret.getMappedResults();
+		AggregationResults<StatsByUserByDayVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class,
+				StatsByUserByDayVo.class);
+		list = ret.getMappedResults();
 		return list;
 	}
-//	db.getCollection('commitStatsPo').aggregate([  
-//	{$project : { day : {$substr: ["$createdAt", 0, 10] },addRow : 1,removeRow:1 ,branchId:1}}
-//	,{$group   : { _id : {branchId: "$branchId",day : "$day"},  addRow : { $sum : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}   
-//	,{$sort : { addRow : -1 }}
-//	     ,{$project : { day : '$_id.day', proinfo : {branchId : '$_id.branchId', addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
-//	     ,{$group:{_id:"$day", pros:{$push:"$proinfo"}, addrow: {$sum: "$proinfo.addRow"},removeRow: {$sum: "$proinfo.removeRow"},commit: {$sum: "$proinfo.commit"}}}
-//	,{$sort : { _id : -1 }}
-//	])
-	public List<StatsByUserByDayVo> statsByDay(String dataformat,MatchOperation match){
-		List<StatsByUserByDayVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-				match,
-				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow").as("addRow")
-				.and("$removeRow").as("removeRow").and("$branchId").as("branchId"),
-				Aggregation.group(Fields.fields("branchId","day")).sum("addRow").as("addRow").sum("removeRow").as("removeRow")
-					.count().as("commit"),
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$project : { day : {$substr: ["$createdAt", 0, 10] },addRow :
+	// 1,removeRow:1 ,branchId:1}}
+	// ,{$group : { _id : {branchId: "$branchId",day : "$day"}, addRow : { $sum
+	// : "$addRow" } ,removeRow : { $sum : "$removeRow" },commit:{$sum:1}}}
+	// ,{$sort : { addRow : -1 }}
+	// ,{$project : { day : '$_id.day', proinfo : {branchId : '$_id.branchId',
+	// addRow:'$addRow',removeRow:'$removeRow',commit:'$commit'}}}
+	// ,{$group:{_id:"$day", pros:{$push:"$proinfo"}, addrow: {$sum:
+	// "$proinfo.addRow"},removeRow: {$sum: "$proinfo.removeRow"},commit: {$sum:
+	// "$proinfo.commit"}}}
+	// ,{$sort : { _id : -1 }}
+	// ])
+	public List<StatsByUserByDayVo> statsByDay(String dataformat, MatchOperation match) {
+		List<StatsByUserByDayVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(match,
+				Aggregation.project().and("createdAt").dateAsFormattedString(dataformat).as("day").and("$addRow")
+						.as("addRow").and("$removeRow").as("removeRow").and("$branchId").as("branchId"),
+				Aggregation.group(Fields.fields("branchId", "day")).sum("addRow").as("addRow").sum("removeRow")
+						.as("removeRow").count().as("commit"),
 				Aggregation.sort(Direction.DESC, "addRow"),
 				Aggregation.project().and("_id.day").as("day").and("proinfo")
-					.nested(Aggregation.bind("_id","_id.branchId").and("addrow","addRow").and("removerow","removeRow").and("commit","commit")),
-				Aggregation.group(Fields.fields("day")).sum("proinfo.addrow").as("addrow")
-					.sum("proinfo.removerow").as("removerow").sum("proinfo.commit").as("commit")
-					.push("proinfo").as("data"),
-				Aggregation.sort(Direction.ASC, "_id")
-		);
+						.nested(Aggregation.bind("_id", "_id.branchId").and("addrow", "addRow")
+								.and("removerow", "removeRow").and("commit", "commit")),
+				Aggregation.group(Fields.fields("day")).sum("proinfo.addrow").as("addrow").sum("proinfo.removerow")
+						.as("removerow").sum("proinfo.commit").as("commit").push("proinfo").as("data"),
+				Aggregation.sort(Direction.ASC, "_id"));
 		System.out.println(agg.toString());
-		AggregationResults<StatsByUserByDayVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, StatsByUserByDayVo.class);
-		list =ret.getMappedResults();
+		AggregationResults<StatsByUserByDayVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class,
+				StatsByUserByDayVo.class);
+		list = ret.getMappedResults();
 		return list;
 	}
-	
-//	db.getCollection('commitStatsPo').aggregate([
-//	    {$group:{_id:'$authorName'}}
-//	])
-	public List<CommitStatsVo> proGroupByAuthorName(String groupId){
-		List<CommitStatsVo> list=null;
-		Aggregation agg= Aggregation.newAggregation(
-				Aggregation.match(new Criteria("groupId").is(groupId)),
-				Aggregation.group(Fields.fields("authorName"))
-		);
-		AggregationResults<CommitStatsVo> ret=  mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
-		list =ret.getMappedResults();
+
+	// db.getCollection('commitStatsPo').aggregate([
+	// {$group:{_id:'$authorName'}}
+	// ])
+	public List<CommitStatsVo> proGroupByAuthorName(String groupId) {
+		List<CommitStatsVo> list = null;
+		Aggregation agg = Aggregation.newAggregation(Aggregation.match(new Criteria("groupId").is(groupId)),
+				Aggregation.group(Fields.fields("authorName")));
+		AggregationResults<CommitStatsVo> ret = mongoTemplate.aggregate(agg, CommitStatsPo.class, CommitStatsVo.class);
+		list = ret.getMappedResults();
 		return list;
 	}
-	
-	
+
 	/**
 	 * @method complementDay(缺省日期数据)
-	 * @param beginDate 开始日期  null -> list第一个时间
+	 * @param beginDate
+	 *            开始日期 null -> list第一个时间
 	 * @return List<CommitStatsVo>
 	 * @author liuqing
-	 * @throws ParseException 
+	 * @throws ParseException
 	 * @date 2017年9月24日 上午10:37:09
 	 */
-	public List<CommitStatsVo> complementDay(List<CommitStatsVo> list,Date beginDate){
+	public List<CommitStatsVo> complementDay(List<CommitStatsVo> list, Date beginDate) {
 		LocalDate today = LocalDate.now();
-		LocalDate loopday=null;
+		LocalDate loopday = null;
 		// mongo查询出来的UnmodifiableRandomAccessList是一个 不可以修改
 		System.out.println(list.getClass());
-		
-		if(beginDate==null){
+
+		if (beginDate == null) {
 			loopday = LocalDate.parse(list.get(0).get_id());
-		}else{
-			 Instant instant = beginDate.toInstant();
-		     ZoneId zoneId = ZoneId.systemDefault();
-		     loopday = instant.atZone(zoneId).toLocalDate();
+		} else {
+			Instant instant = beginDate.toInstant();
+			ZoneId zoneId = ZoneId.systemDefault();
+			loopday = instant.atZone(zoneId).toLocalDate();
 		}
-		List<CommitStatsVo> tmp= new ArrayList<CommitStatsVo>();
-		int index=0;
-		while (loopday.toEpochDay()<=today.toEpochDay()) {
-			if(list.size()-1<index){
-				CommitStatsVo csv=new CommitStatsVo();
+		List<CommitStatsVo> tmp = new ArrayList<CommitStatsVo>();
+		int index = 0;
+		while (loopday.toEpochDay() <= today.toEpochDay()) {
+			if (list.size() - 1 < index) {
+				CommitStatsVo csv = new CommitStatsVo();
 				csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
 				tmp.add(csv);
-			}else{
-				LocalDate cld=LocalDate.parse(list.get(index).get_id());
-				if(cld.toEpochDay()!=loopday.toEpochDay()){
-					CommitStatsVo csv=new CommitStatsVo();
+			} else {
+				LocalDate cld = LocalDate.parse(list.get(index).get_id());
+				if (cld.toEpochDay() != loopday.toEpochDay()) {
+					CommitStatsVo csv = new CommitStatsVo();
 					csv.set_id(loopday.format(DateTimeFormatter.ISO_LOCAL_DATE));
 					tmp.add(csv);
-				}else{
+				} else {
 					tmp.add(list.get(index));
 					index++;
 				}
 			}
-			long nextday=loopday.toEpochDay()+1;
-			loopday=LocalDate.ofEpochDay(nextday);
+			long nextday = loopday.toEpochDay() + 1;
+			loopday = LocalDate.ofEpochDay(nextday);
 		}
 		return tmp;
 	}
-	
 
-	
-	
 }
