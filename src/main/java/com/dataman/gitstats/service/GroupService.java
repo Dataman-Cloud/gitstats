@@ -155,51 +155,68 @@ public class GroupService {
 	}
 
 	private void addWebHook(GroupStats groupStats, GitLabApi gitLabApi, String webHookUrl) throws Exception {
-//		if (groupStats.getInclude() != null) {
-//			List<String> includeProjects = groupStats.getInclude().stream()
-//					.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-//			List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
-//			for (Project project : allProjects) {
-//				if (includeProjects.contains(project.getName())) {
-//					if (!checkWebhookStats(groupStats.getAccountid(), project.getId(), webHookUrl)) {
-//						webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),
-//								webHookUrl);
-//					}
-//				}
-//			}
-//		} else {
-//			if (groupStats.getExclude() != null) {
-//				List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
-//				List<String> excludeProjects = groupStats.getExclude().stream()
-//						.filter(projectWithBranches -> projectWithBranches.getBranches() != null)
-//						.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-//				for (Project project : allProjects) {
-//					if (!excludeProjects.contains(project.getName())) {
-//						if (!checkWebhookStats(groupStats.getAccountid(), project.getId(), webHookUrl)) {
-//							webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),
-//									webHookUrl);
-//						}
-//					}
-//				}
-//			}
-//
-//		}
-		// 获取所有 
+		// if (groupStats.getInclude() != null) {
+		// List<String> includeProjects = groupStats.getInclude().stream()
+		// .map(projectWithBranches ->
+		// projectWithBranches.getName()).collect(Collectors.toList());
+		// List<Project> allProjects =
+		// gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+		// for (Project project : allProjects) {
+		// if (includeProjects.contains(project.getName())) {
+		// if (!checkWebhookStats(groupStats.getAccountid(), project.getId(),
+		// webHookUrl)) {
+		// webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(),
+		// project.getId(),
+		// webHookUrl);
+		// }
+		// }
+		// }
+		// } else {
+		// if (groupStats.getExclude() != null) {
+		// List<Project> allProjects =
+		// gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
+		// List<String> excludeProjects = groupStats.getExclude().stream()
+		// .filter(projectWithBranches -> projectWithBranches.getBranches() !=
+		// null)
+		// .map(projectWithBranches ->
+		// projectWithBranches.getName()).collect(Collectors.toList());
+		// for (Project project : allProjects) {
+		// if (!excludeProjects.contains(project.getName())) {
+		// if (!checkWebhookStats(groupStats.getAccountid(), project.getId(),
+		// webHookUrl)) {
+		// webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(),
+		// project.getId(),
+		// webHookUrl);
+		// }
+		// }
+		// }
+		// }
+		//
+		// }
+		// 获取所有
 		List<Project> allProjects = gitLabApi.getGroupApi().getProjects(groupStats.getGroupId());
-		List<String> includeProjects = groupStats.getInclude().stream()
-				.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-		// 刷选 包含的
-		if(!includeProjects.isEmpty()){
-			allProjects =allProjects.stream().filter(project -> includeProjects.contains(project.getName())).collect(Collectors.toList());
+		if(groupStats.getInclude()!=null){
+			List<String> includeProjects = groupStats.getInclude().stream()
+					.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+			// 刷选 包含的
+			if (!includeProjects.isEmpty()) {
+				allProjects = allProjects.stream().filter(project -> includeProjects.contains(project.getName()))
+						.collect(Collectors.toList());
+			}
 		}
-		List<String> excludeProjects = groupStats.getExclude().stream()
-				.filter(projectWithBranches -> projectWithBranches.getBranches() != null)
-				.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
-		// 过滤 排除的
-		allProjects = allProjects.stream().filter(project -> !excludeProjects.contains(project.getName())).collect(Collectors.toList());
-		// 遍历添加 
+		if(groupStats.getExclude()!=null){
+			List<String> excludeProjects = groupStats.getExclude().stream()
+					.filter(projectWithBranches -> projectWithBranches.getBranches() != null)
+					.map(projectWithBranches -> projectWithBranches.getName()).collect(Collectors.toList());
+			// 过滤 排除的
+			allProjects = allProjects.stream().filter(project -> !excludeProjects.contains(project.getName()))
+					.collect(Collectors.toList());
+		}
+		// 遍历添加
 		for (Project project : allProjects) {
-			webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(),webHookUrl);
+			if (!checkWebhookStats(groupStats.getAccountid(), project.getId(), webHookUrl)) {
+				webHookService.addGitlabPushEventWebHook(groupStats.getAccountid(), project.getId(), webHookUrl);
+			}
 		}
 	}
 
