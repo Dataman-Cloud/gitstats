@@ -85,6 +85,7 @@ public class StatsCommitAsyncTask {
 		long begin = System.currentTimeMillis();
 		int addRow=0;
 		int removeRow=0;
+		int commits=0;
 		CommitStatsVo vo = new CommitStatsVo();
 
 			for (Commit commit : list) {
@@ -109,9 +110,11 @@ public class StatsCommitAsyncTask {
 
 				addRow+=stats.getAdditions();
 				removeRow+=stats.getDeletions();
+				commits+=1;
 			}
 			vo.setAddrow(addRow);
 			vo.setRemoverow(removeRow);
+			vo.setCommit(commits);
 			long usetime = begin-System.currentTimeMillis();
 			logger.info("加载第"+pageNum+"页数据\taddrow:"+addRow+"\tremoveRow"+removeRow);
 			logger.info("加载第"+pageNum+"页数据完成,耗时:"+usetime+"ms");

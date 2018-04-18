@@ -5,13 +5,8 @@ import com.dataman.gitstats.exception.BusinessException;
 import com.dataman.gitstats.po.User;
 import com.dataman.gitstats.repository.UserRepository;
 import com.dataman.gitstats.util.MD5Util;
-import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import sun.security.provider.MD5;
-
-import java.util.Calendar;
-import java.util.Date;
 import java.util.UUID;
 
 /**

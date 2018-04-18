@@ -334,11 +334,38 @@ public class AsyncTask {
 		projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
 		projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
 		projectStats.setTotalRow(projectStats.getTotalRow()+pbs.getTotalRow());
+		projectStats.setTotalCommits(projectStats.getTotalCommits()+pbs.getTotalCommits());
 		projectRepository.save(projectStats);
 		GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
 		groupStats.setTotalAddRow(groupStats.getTotalAddRow()+pbs.getTotalAddRow());
 		groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
 		groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
+		groupStats.setTotalCommits(groupStats.getTotalCommits()+pbs.getTotalCommits());
+		groupStatsRepository.save(groupStats);
+	}
+
+	/**
+	 * @method: updateGroupForEvents
+	 * @Description hook push event和merge event级联更新group和project信息
+	 * @author biancl
+	 * @date 2018-04-18 15:09
+	 * @param
+	 * @param totalAdd
+	 *@param totalDel
+	 * @param size @return
+	 */
+	private synchronized void updateGroupForEvents(ProjectBranchStats pbs, int totalAdd, int totalDel, int totalCommits) throws InterruptedException {
+		ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
+		projectStats.setTotalAddRow(projectStats.getTotalAddRow()+totalAdd);
+		projectStats.setTotalDelRow(projectStats.getTotalDelRow()+totalDel);
+		projectStats.setTotalRow(projectStats.getTotalRow()+totalAdd-totalDel);
+		projectStats.setTotalCommits(projectStats.getTotalCommits()+totalCommits);
+		projectRepository.save(projectStats);
+		GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
+		groupStats.setTotalAddRow(groupStats.getTotalAddRow()+totalAdd);
+		groupStats.setTotalDelRow(groupStats.getTotalDelRow()+totalDel);
+		groupStats.setTotalRow(groupStats.getTotalRow()+totalAdd-totalDel);
+		groupStats.setTotalCommits(groupStats.getTotalCommits()+totalCommits);
 		groupStatsRepository.save(groupStats);
 	}
 
@@ -354,7 +381,7 @@ public class AsyncTask {
 		logger.info("初始化开始:"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch());
 		Calendar cal =Calendar.getInstance();
 		long begin = System.currentTimeMillis();
-		int addRow=0,removeRow=0;
+		int addRow=0,removeRow=0;int totalCommits=0;
 		int projectId= pbs.getProid();
 		String branch=pbs.getBranch();
 		try {
@@ -378,13 +405,14 @@ public class AsyncTask {
 				for (CommitStatsVo vo : stats) {
 					addRow+=vo.getAddrow();
 					removeRow+=vo.getRemoverow();
+					totalCommits+=vo.getCommit();
 				}
 				pbs.setStatus(2);
 				pbs.setTotalAddRow(addRow);
 				pbs.setTotalDelRow(removeRow);
 				pbs.setTotalRow(addRow-removeRow);
 				pbs.setLastupdate(cal.getTime());
-				pbs.setTotalCommits(page.getTotalItems());
+				pbs.setTotalCommits(totalCommits);
 				projectBranchStatsRepository.save(pbs);  //保存跟新记录
 				logger.info("update success");
 				long usetime = begin-System.currentTimeMillis();
@@ -393,13 +421,11 @@ public class AsyncTask {
 				Integer pageNum=0;
 				boolean hasNext=true;
 				List<CommitStatsVo> commits=new ArrayList<CommitStatsVo>();
-				int totalCommits=0;
 				while (hasNext) {
 					List<Commit> list= gitLabApi.getCommitsApi().getCommits(projectId,branch,null,null,pageNum,100);
 					if(list.isEmpty()){
 						hasNext=false;
 					}else{
-						totalCommits+=list.size();
 						commits.add(statsCommitAsyncTask.commitstats2(list, gitLabApi, projectId, pbs.getId(),pbs.getGroupId(), pageNum + 1));
 					}
 					pageNum++;
@@ -407,6 +433,7 @@ public class AsyncTask {
 				for (CommitStatsVo vo : commits) {
 					addRow+=vo.getAddrow();
 					removeRow+=vo.getRemoverow();
+					totalCommits+=vo.getCommit();
 				}
 				pbs.setStatus(2);
 				pbs.setTotalAddRow(addRow);
@@ -442,25 +469,29 @@ public class AsyncTask {
 		projectBranchStats.setStatus(0);
 		projectBranchStatsRepository.save(projectBranchStats);
 		CommitStatsPo commitStats;
+		int totalAdd=0;
+		int totalDel=0;
 		for(EventCommit eventCommit:eventCommitList){
 			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
 			commitStats=new CommitStatsPo();
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
-			commitStats.setId(projectBranchStats.getGroupId()+"_"+commit.getId());
+			commitStats.set_id(projectBranchStats.getGroupId() + "_" + commit.getId());
 			commitStats.setBranchId(projectBranchStats.getId());
+			commitStats.setGroupId(projectBranchStats.getGroupId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());
 			commitStats.setCrateDate(new Date());
-
-			projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
-			projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
-			projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
-			projectBranchStatsRepository.save(projectBranchStats);
 			commitStatsRepository.save(commitStats);
+			totalAdd+=commitStats.getAddRow();
+			totalDel+=commitStats.getRemoveRow();
 		}
-		updateGroup(projectBranchStats);
+		projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+totalAdd);
+		projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow()+totalDel);
+		projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+		projectBranchStats.setTotalCommits(projectBranchStats.getTotalCommits()+eventCommitList.size());
+		updateGroupForEvents(projectBranchStats,totalAdd,totalDel,eventCommitList.size());
 		projectBranchStats.setStatus(1);
 		projectBranchStatsRepository.save(projectBranchStats);
 		record.setStatus(MergeRequestEventRecord.FINISHED);
@@ -478,6 +509,8 @@ public class AsyncTask {
 		projectBranchStats.setStatus(0);
 		projectBranchStatsRepository.save(projectBranchStats);
 		CommitStatsPo commitStats;
+		int totalAdd=0;
+		int totalDel=0;
 		for(Commit eventCommit:eventCommitList){
 			commitStats=commitStatsRepository.findOne(eventCommit.getId());
 			Commit commit=gitLabApi.getCommitsApi().getCommit(projectBranchStats.getProid(),eventCommit.getId());
@@ -485,19 +518,21 @@ public class AsyncTask {
 			ClassUitl.copyPropertiesExclude(commit, commitStats, new String[]{"parentIds","stats"});
 			// Set<String> branch=new HashSet<>();
 			// branch.add(projectBranchStats.getBranch());
-			commitStats.setId(projectBranchStats.getGroupId()+"_"+commit.getId());
+			commitStats.set_id(projectBranchStats.getGroupId()+"_"+commit.getId());
 			commitStats.setBranchId(projectBranchStats.getId());
 			commitStats.setAddRow(commit.getStats().getAdditions());
 			commitStats.setRemoveRow(commit.getStats().getDeletions());
+			commitStats.setGroupId(projectBranchStats.getGroupId());
 			commitStats.setCrateDate(new Date());
-
-			projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+commit.getStats().getAdditions());
-			projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow() + commit.getStats().getDeletions());
-			projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
-			projectBranchStatsRepository.save(projectBranchStats);
 			commitStatsRepository.save(commitStats);
+			totalAdd+=commitStats.getAddRow();
+			totalDel+=commitStats.getRemoveRow();
 		}
-		updateGroup(projectBranchStats);
+		projectBranchStats.setTotalAddRow(projectBranchStats.getTotalAddRow()+totalAdd);
+		projectBranchStats.setTotalDelRow(projectBranchStats.getTotalDelRow()+totalDel);
+		projectBranchStats.setTotalRow(projectBranchStats.getTotalAddRow()-projectBranchStats.getTotalDelRow());
+		projectBranchStats.setTotalCommits(projectBranchStats.getTotalCommits() + eventCommitList.size());
+		updateGroupForEvents(projectBranchStats, totalAdd, totalDel, eventCommitList.size());
 		projectBranchStats.setStatus(1);
 		projectBranchStatsRepository.save(projectBranchStats);
 		record.setStatus(MergeRequestEventRecord.FINISHED);
