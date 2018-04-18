@@ -2,11 +2,25 @@
 一、操作流程		
 1、登录swagger api地址：http://hostname:port/swagger/index.html
 打开添加用户接口，添加一个用户，参数只需填写用户名和密码即可
+太平人寿已配置用户名密码：admin/123456
 2、登录后台地址：http://hostname:port/admin.html
 使用上面添加的用户登录后台
 3、添加gitlab账号
-4、添加gitlab项目并选择分支		
+4、添加gitlab项目组并排除或包含项目和分支以及排除统计的开发者
+
 注意事项：
 1）由于下拉列表的数据是从gitlab实时获取的，所以添加gitlab项目时，选择下拉框后如没有内容展示则稍等一下再打开即可
 2）如果项目还没有提交过任何代码则不能添加项目，因为项目代码仓库会返回空，项目分支等也都为空
-3）添加项目后会在gitlab项目上新增一个指向gitstats的webhook，请勿删除该配置。
+3）添加项目后会在gitlab项目上新增一个指向gitstats的webhook，请勿删除该配置,另外请确保从gitlab到gitstats服务器的网络双向联通，
+    否则gitstats无法接收到gitlab的hook请求
+4）在某一个项目组中如果有新建的项目或新建的分支，需要在管理页面重置该项目组才能收集该新增项目或分支的代码
+5）服务重启：
+      gitstats目前打为war包放在tomcat下，太平人寿服务器上的tomcat是用yum安装的，并且已设置为开机自启动.
+      如发现tomcat服务挂掉时可以使用service tomcat start启动。
+      gitstats war包地址为/usr/share/tomcat/webapps/gitstats.war，如需迁移可将gitstats.war拷贝至目标服务器下tomcat中并按照下面配置tomcat即可。
+6）tomcat配置：
+       tomcat配置文件在/etc/tomcat/目录下，太平人寿服务器修改了两个配置：
+            1、端口号的设置，缺省的8080修改为8081，因为前端有部分图片路径为写死的端口号，故端口号请勿修改。
+            2、tomcat缺省项目设置，因为gitstats项目前端访问后台时没有带项目名称，故将缺省项目指引到gitstats，此处也请注意不要修改。
+7）服务日志：
+    gitstats日志在/usr/share/tomcat/logs/gitstats.yyyy-MM-dd.log
