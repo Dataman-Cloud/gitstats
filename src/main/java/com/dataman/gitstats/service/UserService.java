@@ -99,5 +99,9 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public void del(String userId){
+        userRepository.delete(userId);
+    }
+
 
 }

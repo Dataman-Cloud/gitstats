@@ -25,14 +25,15 @@ public class CommitStatsPo extends Commit{
 	int removeRow; //删除行数
 	String projectName;
 	String branchId;
+	String groupId;
 	Date crateDate;
 
 	public String get_id() {
 		return _id;
 	}
 
-	public void set_id() {
-		this._id=branchId+"_"+getId();
+	public void set_id(String _id) {
+		this._id=_id;
 	}
 
 	public int getAddRow() {
@@ -73,5 +74,13 @@ public class CommitStatsPo extends Commit{
 
 	public void setCrateDate(Date crateDate) {
 		this.crateDate = crateDate;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 }

@@ -27,55 +27,53 @@ public class GitlabAccountController extends BaseController{
 	@ApiOperation(value = "添加gitlab帐号")
 	public Object addAccount(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
 			@Valid @RequestBody AddAccountParam param,BindingResult bingingresult){
-		json.clear();
+
 		if(bingingresult.hasErrors()){
-			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
-			return json;
+			return  setJson(PARAMERR_CODE,bingingresult.getAllErrors());
 		}
 		try {
 			int ret= gitlabAccountService.addGitlabAccount(param);
 			if(ret==0){
-				setJson(SUCCESS_CODE, "保存成功");
+				return  setJson(SUCCESS_CODE, "保存成功");
 			}else if(ret==1){
-				setJson(FAIL_CODE, "已存在");
+				return  setJson(FAIL_CODE, "已存在");
 			}else if(ret==2){
-				setJson(FAIL_CODE, "验证不通过");
+				return  setJson(FAIL_CODE, "验证不通过");
+			}else{
+				return  setJson(FAIL_CODE, "未知错误");
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("添加gitlab账号异常：",e);
+			return  setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 
 	@RequestMapping(value="/",method=RequestMethod.GET)
 	@ApiOperation(value = "获取所有的帐号")
 	public Object allAccount(){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, gitlabAccountService.getAll());
+			return  setJson(SUCCESS_CODE, gitlabAccountService.getAll());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("获取gitlab账号异常：", e);
+			return  setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	@AuthRequired
 	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
 	@ApiOperation(value = "删除帐号")
 	public Object delAccount(@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
 			@ApiParam(required = true, name = "id", value = "帐号id") @PathVariable  String id){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, gitlabAccountService.delAccount(id));
+			return  setJson(SUCCESS_CODE, gitlabAccountService.delAccount(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("删除gitlab账号异常：",e);
+			return  setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 }

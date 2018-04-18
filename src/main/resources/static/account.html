@@ -36,7 +36,8 @@
             <el-col :span="16" :offset="4">
                 <el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
                     <el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item>
-                    <el-menu-item index="2"><a href="project.html">项目管理</a></el-menu-item>
+                   <!--  <el-menu-item index="2"><a href="project.html">项目管理</a></el-menu-item> -->
+                    <el-menu-item index="3"><a href="group.html">项目组管理</a></el-menu-item>
                 </el-menu>
 
             </el-col>
@@ -231,13 +232,15 @@
                             .catch(function (error) {
                                 var errorMessage="添加gitlab账号失败";
                                 if(self.gitlab_account.id!=null){
-                                    message="修改gitlab账号失败";
+                                    errorMessage="修改gitlab账号失败";
                                 }
-                                console.log("******************error" + error);
                                 self.$notify.error({
-                                    title: message,
+                                    title: errorMessage,
                                     message: error.response.data.data || error.message
                                 });
+                                    if(error.response.status=="401"){
+                                        window.location.href='admin.html';
+                                    }
                                 self.$refs.addForm.resetFields();
                             });
                     }
@@ -288,6 +291,9 @@
                     title: '删除gitlab账号失败',
                     message: error.response.data.data || error.message
                 });
+    if(error.response.status=="401"){
+        window.location.href='admin.html';
+    }
             })
                 ;
             })

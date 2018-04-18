@@ -27,17 +27,16 @@ public class WebHookController extends BaseController {
 	@RequestMapping(value = "get/{projectId}",method = RequestMethod.GET)
 	@ApiOperation(value = "获取某个分支所属项目的webhook", notes = "获取某个分支所属项目的webhook")
 	public Object getProjectHooks(HttpServletRequest request,@ApiParam(required = true, name = "branchId", value = "项目分支id")@PathVariable String branchId) throws Exception {
-		json.clear();
+
 		List<ProjectHook> hooks= hookService.getProjectHook(branchId);
-		setJson(hooks);
-		return json;
+		return  setJson(hooks);
+
 	}
 
 	@RequestMapping(value="/listener",method=RequestMethod.POST)
 	@ApiOperation(value = "gitlab的webHook接收方法", notes = "gitlab的webHook接收方法")
 	public Object receiveWebHook(HttpServletRequest request) throws Exception {
 		hookService.handleWebHookEvent(request);
-		json.clear();
-		return json;
+		return null;
 	}
 }

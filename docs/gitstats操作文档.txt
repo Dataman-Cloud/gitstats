@@ -1,0 +1,12 @@
+﻿gitstats项目使用说明文档：
+一、操作流程		
+1、登录swagger api地址：http://hostname:port/swagger/index.html
+打开添加用户接口，添加一个用户，参数只需填写用户名和密码即可
+2、登录后台地址：http://hostname:port/admin.html
+使用上面添加的用户登录后台
+3、添加gitlab账号
+4、添加gitlab项目并选择分支		
+注意事项：
+1）由于下拉列表的数据是从gitlab实时获取的，所以添加gitlab项目时，选择下拉框后如没有内容展示则稍等一下再打开即可
+2）如果项目还没有提交过任何代码则不能添加项目，因为项目代码仓库会返回空，项目分支等也都为空
+3）添加项目后会在gitlab项目上新增一个指向gitstats的webhook，请勿删除该配置。

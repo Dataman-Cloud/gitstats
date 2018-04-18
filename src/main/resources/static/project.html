@@ -37,6 +37,7 @@
 				<el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
 					<el-menu-item index="1"><a href="account.html">帐号管理</a></el-menu-item>
 					<el-menu-item index="2"><a href="project.html">项目管理</a></el-menu-item>
+                    <el-menu-item index="3"><a href="group.html">项目组管理</a></el-menu-item>
 				</el-menu>
 
 			</el-col>
@@ -58,7 +59,7 @@
 				<el-table-column prop="branch" label="分支名称" width="120"></el-table-column>
 				<el-table-column prop="showStatus" label="项目状态" width="120"></el-table-column>
 				<el-table-column prop="showLastupdate" label="修改日期" width="180"></el-table-column>
-				<el-table-column label="操作" width="320" >
+				<el-table-column label="操作" width="400" >
 					<template scope="scope">
 						<el-button @click="showEdit(scope.row)" type="info" icon="edit" size="small">编辑</el-button>
 						<el-button @click="showDetails(scope.row.id)" type="info" icon="document" size="small">详情</el-button>
@@ -115,7 +116,7 @@
 				</el-form-item>
 -->
 				<el-form-item>
-					<el-button type="primary" @click="add">提交</el-button>
+					<el-button type="primary" @click="add" :disabled="editDisabled" >提交</el-button>
 					<el-button @click="closeDialog">取消</el-button>
 				</el-form-item>
 
@@ -146,7 +147,8 @@
                     projectNameWithNamespace:null,
                     viewName:null,
                     dateformat:null,
-                    lastDate:null
+                    lastDate:null,
+
                 },
 				dateformats:[{ value: 'YMD', label: '日' }, 
 						{ value: 'YW', label: '周' }, 
@@ -161,7 +163,8 @@
                 projects: [],
                 activeIndex: "2",
                 showDialog: false,
-                emptyText:"暂无数据"
+                emptyText:"暂无数据",
+                editDisabled:false
             }
         },
         methods: {
@@ -190,6 +193,7 @@
                 console.log(this.$refs.addForm);
                 self.$refs.addForm.validate((valid) => {
                     if(valid){
+                        self.editDisabled=true;
                         axios.post(baseUrl + '/project/', self.gitlab_project,{"headers":{"token":localStorage.getItem("token")}})
                             .then(function (response) {
                                 console.log(response);
@@ -207,13 +211,18 @@
                                         message: response.data.data
                                     });
                                 }
+                                    self.editDisabled=false;
                             }).catch(function (error) {
                                 console.log("******************error" + error);
                                 self.$notify.error({
                                     title: '添加统计项目失败',
                                     message: error.response.data.data || error.message
                                 });
+                                    if(error.response.status=='401'){
+                                        window.location.href='admin.html';
+                                    }
                                 self.$refs.addForm.resetFields();
+                                    self.editDisabled=false;
                             });
 	                    }
 	                }
@@ -251,6 +260,9 @@
                      title: '删除统计项目失败',
                      message: error.response.data.data || error.message
                    });
+    if(error.response.status=='401'){
+        window.location.href='admin.html';
+    }
             	   });
             })},
             reset(projectId){
@@ -274,6 +286,9 @@
                     		title: '初始化项目失败',
                     		message: error.response.data.data || error.message
                 			});
+                        if(error.response.status=='401'){
+                            window.location.href='admin.html';
+                        }
             		});
             })},
             closeDialog(){

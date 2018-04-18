@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import com.dataman.gitstats.annotation.AuthRequired;
+import com.dataman.gitstats.service.CommonService;
 import org.gitlab4j.api.GitLabApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
@@ -33,18 +34,20 @@ public class ProjectController extends BaseController {
 	@Autowired
 	ProjectBranchService projectBranchService;
 
+	@Autowired
+	private CommonService commonService;
+
 	@RequestMapping(value = "/",method = RequestMethod.GET)
 	@ApiOperation(value = "获取所有统计项目")
 	public Object getAll(@RequestParam(required = false) @ApiParam(name = "limit", value = "是否过滤未初始化") String limit){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats(limit));
+			return setJson(SUCCESS_CODE,projectBranchService.getAllProjectBranchStats(limit));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("获取所有统计项目异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	@AuthRequired
 	@RequestMapping(value = "/{branchId}",method = RequestMethod.DELETE)
@@ -52,60 +55,57 @@ public class ProjectController extends BaseController {
 	public Object delete(
 			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
 			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId){
-		json.clear();
+
 		projectBranchService.deleteProjectBranchStats(branchId);
-		setJson(SUCCESS_CODE);
-		return json;
+		return setJson(SUCCESS_CODE);
+
 	}
 	@AuthRequired
 	@RequestMapping(value = "/{branchId}",method = RequestMethod.PUT)
 	@ApiOperation(value = "重新初始化项目")
 	public Object reset(
 			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
-			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId) throws GitLabApiException {
-		json.clear();
-		projectBranchService.resetProjectBranchStats(branchId);
-		setJson(SUCCESS_CODE);
-		return json;
+			@ApiParam(required = true, name = "branchId", value = "分支id") @PathVariable String branchId,
+			HttpServletRequest request) throws Exception {
+
+		String webhookUrl=commonService.getHookListenerPath(request);
+		projectBranchService.resetProjectBranchStats(branchId,webhookUrl);
+		return setJson(SUCCESS_CODE);
+
 	}
 	@AuthRequired
 	@RequestMapping(value="/",method=RequestMethod.POST)
 	@ApiOperation(value = "添加需要统计的项目")
 	public Object add(
 			@ApiParam(required = true, name = "token", value = "请求头token权限认证") @RequestHeader String token,
-			@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request){
-		json.clear();
+			@Valid @RequestBody AddProjectParam param,BindingResult bingingresult,HttpServletRequest request) throws Exception{
+
 		if(bingingresult.hasErrors()){
-			setJson(PARAMERR_CODE,bingingresult.getAllErrors());
-			return json;
+			return setJson(PARAMERR_CODE,bingingresult.getAllErrors());
+
 		}
-		try {
+		String webhookUrl=commonService.getHookListenerPath(request);
 			if(param.getId()==null){
-				setJson(SUCCESS_CODE, projectBranchService.addProject(param,request));
+				return setJson(SUCCESS_CODE, projectBranchService.addProject(param, webhookUrl));
 			}else{
-				setJson(SUCCESS_CODE);
-				projectBranchService.modifyProjectBranchStats(param);
+				projectBranchService.modifyProjectBranchStats(param,webhookUrl);
+				return setJson(SUCCESS_CODE);
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
-		}
-		return json;
+
+
 	}
 
 	@RequestMapping(value="/projectBranchStats/{id}/byUser",method=RequestMethod.GET)
 	@ApiOperation(value = "根据User显示统计数据")
 	public Object showProjectBranchStatsByUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByUser(id));
+			return setJson(SUCCESS_CODE, projectBranchService.showStatsByUser(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("根据User显示统计数据异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 
 	@RequestMapping(value="/projectBranchStats/{id}/byDay",method=RequestMethod.GET)
@@ -113,16 +113,15 @@ public class ProjectController extends BaseController {
 	public Object showProjectBranchStats(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
 			@RequestParam(required = false)  @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
 			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByDay(id,MongoDateUtil.getFormat(dateformat)
+			return setJson(SUCCESS_CODE, projectBranchService.showStatsByDay(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("根据时间显示统计数据异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 	@RequestMapping(value="/projectBranchStats/{id}/byUserAndDay",method=RequestMethod.GET)
@@ -130,16 +129,15 @@ public class ProjectController extends BaseController {
 	public Object showProjectBranchByUserAndDay(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
 			@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
 			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByUserAndDay(id,MongoDateUtil.getFormat(dateformat)
+			return setJson(SUCCESS_CODE, projectBranchService.showStatsByUserAndDay(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("根据时间和用户显示统计数据异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 	@RequestMapping(value="/projectBranchStats/{id}/byDayAndUser",method=RequestMethod.GET)
@@ -147,45 +145,42 @@ public class ProjectController extends BaseController {
 	public Object showProjectBranchByDayAndUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id,
 			@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
 			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id,MongoDateUtil.getFormat(dateformat)
+			return setJson(SUCCESS_CODE, projectBranchService.showStatsByDayAndUser(id,MongoDateUtil.getFormat(dateformat)
 					,MongoDateUtil.getOperation(id, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("根据时间和用户显示统计数据异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 	@RequestMapping(value="/projectBranchStats/byDay",method=RequestMethod.GET)
 	@ApiOperation(value = "根据时间显示统计所有项目数据")
 	public Object showProjectBranchStats(@RequestParam(required = false) @ApiParam(name = "dateformat", value = "时间格式") String dateformat,
 			@RequestParam(required = false) @ApiParam(name = "lastDate", value = "时间范围") Integer lastDate){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.statsByDay(MongoDateUtil.getFormat(dateformat),MongoDateUtil.getOperation(null, dateformat, lastDate)));
+			return setJson(SUCCESS_CODE, projectBranchService.statsByDay(MongoDateUtil.getFormat(dateformat),MongoDateUtil.getOperation(null, dateformat, lastDate)));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("根据时间显示统计所有项目数据异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 	@RequestMapping(value="/projectBranchStats/{id}/users",method=RequestMethod.GET)
 	@ApiOperation(value = "获取项目所有提交者")
 	public Object showProjectBranchByDayAndUser(@ApiParam(required = true, name = "id", value = "分支id") @PathVariable  String id){
-		json.clear();
+
 		try {
-			setJson(SUCCESS_CODE, projectBranchService.getProAllAuthorName(id));
+			return setJson(SUCCESS_CODE, projectBranchService.getProAllAuthorName(id));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			setJson(FAIL_CODE, e.getMessage());
+			logger.error("获取项目所有提交者异常：", e);
+			return setJson(FAIL_CODE, e.getMessage());
 		}
-		return json;
+
 	}
 	
 }
