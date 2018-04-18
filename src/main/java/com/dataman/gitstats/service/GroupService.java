@@ -268,6 +268,7 @@ public class GroupService {
 			groupStats.setTotalRow(0);
 			groupStats.setTotalDelRow(0);
 			groupStats.setTotalAddRow(0);
+			groupStats.setTotalCommits(0);
 			groupStatsRepository.save(groupStats);
 			asyncTask.initGroupStats(groupStats);
 			addWebHook(groupStats, gitlabUtil.getGitLabApi(groupStats.getAccountid()), webHookUrl);
