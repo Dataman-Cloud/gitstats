@@ -5,7 +5,7 @@
     <groupId>com.dataman</groupId>
     <artifactId>gitstats</artifactId>
     <version>1.0</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
 
     <name>gitstats</name>
     <url>http://maven.apache.org</url>
@@ -32,6 +32,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                            <exclusion>
+                                <groupId>org.springframework.boot</groupId>
+                                <artifactId>spring-boot-starter-tomcat</artifactId>
+                            </exclusion>
+                        </exclusions>
+
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -111,8 +118,15 @@
 					</execution>
 				</executions>
 			</plugin>
-		
-			<plugin>
+            <plugin>
+                   <groupId>org.apache.maven.plugins</groupId>
+                   <artifactId>maven-war-plugin</artifactId>
+                   <configuration>
+                    <warName>gitstats</warName>
+                   </configuration>
+            </plugin>
+
+            <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
 					<execution>
