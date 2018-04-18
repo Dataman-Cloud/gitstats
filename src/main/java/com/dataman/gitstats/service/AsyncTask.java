@@ -321,7 +321,15 @@ public class AsyncTask {
 		return new AsyncResult<String>("初始化完成");  
 	}
 
-	private synchronized void updateGroup(ProjectBranchStats pbs){
+	/**
+	 * @method: updateGroup
+	 * @Description 级联更新group内容
+	 * @author biancl
+	 * @date 2018-04-10 19:25
+	 * @param
+	 * @return 
+	 */
+	private synchronized void updateGroup(ProjectBranchStats pbs) throws InterruptedException {
 		ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
 		projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
 		projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
@@ -407,25 +415,7 @@ public class AsyncTask {
 				pbs.setLastupdate(cal.getTime());
 				pbs.setTotalCommits(totalCommits);
 				projectBranchStatsRepository.save(pbs);
-
-				synchronized (this.getClass()){
-					logger.info("*******************current thread's id="+Thread.currentThread().getId()+"***************start");
-					ProjectStats projectStats=projectRepository.findOne(pbs.getProjectId());
-					projectStats.setTotalAddRow(projectStats.getTotalAddRow()+pbs.getTotalAddRow());
-					projectStats.setTotalDelRow(projectStats.getTotalDelRow()+pbs.getTotalDelRow());
-					projectStats.setTotalRow(projectStats.getTotalRow()+pbs.getTotalRow());
-					projectStats.setTotalCommits(projectStats.getTotalCommits()+pbs.getTotalCommits());
-					projectRepository.save(projectStats);
-					GroupStats groupStats=groupStatsRepository.findOne(pbs.getGroupId());
-					groupStats.setTotalAddRow(groupStats.getTotalAddRow()+pbs.getTotalAddRow());
-					groupStats.setTotalDelRow(groupStats.getTotalDelRow()+pbs.getTotalDelRow());
-					groupStats.setTotalRow(groupStats.getTotalRow()+pbs.getTotalRow());
-					groupStats.setTotalCommits(groupStats.getTotalCommits()+pbs.getTotalCommits());
-					groupStatsRepository.save(groupStats);
-					logger.info("=========================curret thread's id="+Thread.currentThread().getId()+"==============end");
-				}
-
-				logger.info("update success");
+				updateGroup(pbs);
 				long usetime = begin-System.currentTimeMillis();
 				logger.info("初始化"+pbs.getProjectNameWithNamespace()+"."+pbs.getBranch()+"完成耗时:"+usetime+"ms");
 			}
@@ -470,6 +460,7 @@ public class AsyncTask {
 			projectBranchStatsRepository.save(projectBranchStats);
 			commitStatsRepository.save(commitStats);
 		}
+		updateGroup(projectBranchStats);
 		projectBranchStats.setStatus(1);
 		projectBranchStatsRepository.save(projectBranchStats);
 		record.setStatus(MergeRequestEventRecord.FINISHED);
@@ -506,6 +497,7 @@ public class AsyncTask {
 			projectBranchStatsRepository.save(projectBranchStats);
 			commitStatsRepository.save(commitStats);
 		}
+		updateGroup(projectBranchStats);
 		projectBranchStats.setStatus(1);
 		projectBranchStatsRepository.save(projectBranchStats);
 		record.setStatus(MergeRequestEventRecord.FINISHED);
